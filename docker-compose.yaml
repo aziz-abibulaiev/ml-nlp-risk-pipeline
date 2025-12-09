@@ -1,0 +1,452 @@
+services:
+  os-init:
+    image: curlimages/curl:8.4.0
+    container_name: os-init
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    environment:
+      OPENSEARCH_URL: http://opensearch:9200
+    volumes:
+      - ./services/alerting/alerts-template.json:/init/alerts-template.json:ro
+      - ./services/alerting/incidents-template.json:/init/incidents-template.json:ro
+    command: >
+      sh -lc '
+        OS="${OPENSEARCH_URL:-http://opensearch:9200}";
+        echo "waiting for $$OS...";
+        until curl -fsS "$$OS/_cluster/health" >/dev/null; do sleep 2; done;
+        echo "applying index template...";
+        curl -fsS -X PUT "$$OS/_index_template/alerts-template" -H "Content-Type: application/json" --data "@/init/alerts-template.json";
+        curl -fsS -X PUT "$$OS/_index_template/incidents-template" -H "Content-Type: application/json" --data "@/init/incidents-template.json";
+        echo "done";'
+    restart: "no"
+  retrain:
+    build:
+      context: .
+      dockerfile: services/retrain/Dockerfile
+    container_name: retrain
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        ML_NUM_PATH="/data/ml_numeric.csv"
+        NLP_TRAIN_PATH="/data/nlp_train.csv"
+
+        if [ ! -f "$$ML_NUM_PATH" ]; then
+          echo "[retrain CMD] ml_numeric not found at $$ML_NUM_PATH, building from Kaggle..."
+          echo "[retrain CMD] building ml_numeric from attack-lab dataset..."
+          python -u jobs/retrain/build_ml_numeric_attacklab.py
+
+          echo "[retrain CMD] merging CSIC dataset into ml_numeric..."
+          python -u jobs/retrain/build_ml_numeric_from_csic.py
+        else
+          echo "[retrain CMD] ml_numeric already exists at $$ML_NUM_PATH, skipping build scripts"
+        fi
+
+        if [ ! -f "$$NLP_TRAIN_PATH" ]; then
+          echo "[retrain CMD] nlp_train not found at $$NLP_TRAIN_PATH, building from Kaggle..."
+          echo "[retrain CMD] building nlp_train from httpparams dataset..."
+          cp /data/nlp_base.csv /data/nlp_train.csv
+          python -u jobs/retrain/build_nlp_from_httpparams.py --mode append
+          echo "[retrain CMD] building nlp_train from web application payload dataset..."
+          python jobs/retrain/build_nlp_from_web_payloads.py --mode append
+        else
+          echo "[retrain CMD] nlp_train already exists at $$NLP_TRAIN_PATH, skipping build scripts"
+        fi
+
+        echo "[retrain CMD] running main retrain..."
+        python -u jobs/retrain/main.py
+    restart: "no"
+    environment:
+      DATA: /data/nlp_train.csv
+      IF_OUT: "/models/ml/if_model.joblib"
+      NLP_TFIDF_LR_PATH: /models/nlp/nlp_tfidf_lr.joblib
+      NLP_CHAR_SGD_PATH: /models/nlp/nlp_char_sgd.joblib
+      NLP_TRAIN_FILE: "/data/nlp_train.csv"
+      ML_NUM_FILE: "/data/ml_numeric.csv"
+      TRAIN_TARGET: "all"
+      LOG_LEVEL: "INFO"
+      FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code"
+    volumes:
+      - ./data:/data
+      - ./models:/models
+    # retrain — batch, без портів/хелсчеків
+  preprocess:
+    build: 
+      context: .
+      dockerfile: services/preprocess/Dockerfile
+    container_name: preprocess
+    restart: unless-stopped
+    environment:
+      LOG_LEVEL: "INFO"
+      MAX_EVENT_BYTES: "2000000"
+      MAX_TEXT_BYTES: "20000"
+      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+      PREPROC_ENV: "prod"
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./rules:/app/rules:ro
+  ml-inference:
+    build:
+      context: .
+      dockerfile: services/ml_infer/Dockerfile
+    container_name: ml-inference
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    environment:
+      LOG_LEVEL: "DEBUG"
+      ML_THRESHOLD: "0.7"
+      PRELOAD_MODELS: "true"
+      FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code"
+      MODEL_PATH_IF: "/models/ml/if_model.joblib"
+      MODEL_PATH_OCSVM: "/models/ml/ocsvm_model.joblib"
+      MODEL_PATH_AE: "/models/ml/ae_model.joblib"
+      MODEL_PATH_LSTM_AE: "/models/ml/lstm_ae_model.joblib"
+    volumes:
+      - ./models:/models:ro
+    # depends_on:
+    #   retrain:
+    #     condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys,json; r=urllib.request.urlopen('http://localhost:8000/ready'); sys.exit(0 if r.status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+  nlp-inference:
+    build:
+      context: .
+      dockerfile: services/nlp_infer/Dockerfile
+    container_name: nlp-inference
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    environment:
+      LOG_LEVEL: "INFO"
+      NLP_THRESHOLD: "0.60"
+      NLP_TFIDF_LR_PATH: "/models/nlp/nlp_tfidf_lr.joblib"
+      NLP_CHAR_SGD_PATH: "/models/nlp/nlp_char_sgd.joblib"
+    volumes:
+      - ./models:/models:ro
+      - ./rules:/app/rules:ro 
+    # depends_on:
+    #   retrain:
+    #     condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/ready').status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+  fusion:
+    build:
+      context: .
+      dockerfile: services/fusion/Dockerfile
+    container_name: fusion
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    environment:
+      LOG_LEVEL: "INFO"
+      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+      FUSION_MODE: "weighted_adaptive"
+      FUSION_LEVELS: "0.3,0.5,0.6,0.8"
+      FUSION_TOPIC_STRONG: "0.7"
+      FUSION_FINAL_THR: "0.55"
+      FUSION_TOPIC_ESCALATION: "disabled" # "all_high" | "all_critical" | "list" | "disabled"
+      HYST_ENABLED: "0"
+      HYST_MARGIN: "0.07"
+      HYST_UP_MARGIN: "0.02"
+      HYST_KEY_FIELD: "hkey"
+      HYST_TTL: "600" 
+      REDIS_URL: "redis://redis:6379/0"
+      FUSION_RISK_MODE: "score_x_impact"
+      IMPACT_POLICY_FILE: "/app/policies/impact_policy.json"
+    volumes:
+      - ./policies/impact_policy.json:/app/policies/impact_policy.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      redis:
+        condition: service_healthy
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server","--save","", "--appendonly","no"]
+    container_name: redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 10
+  alerting:
+    build:
+      context: .
+      dockerfile: services/alerting/Dockerfile
+    container_name: alerting
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    environment:
+      LOG_LEVEL: "INFO"
+      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+      STIX_ENABLED: "0"
+      ALERT_DRY_RUN: "0"
+      OPENSEARCH_URL: "http://opensearch:9200"
+      OPENSEARCH_USER: "admin"
+      OPENSEARCH_PASS: "admin"
+      OPENSEARCH_INDEX_PREFIX: "alerting"
+      OPENSEARCH_VERIFY: "0"
+      ALERT_MIN_RISK: "medium"
+      ALERT_TIMEOUT: "3.0"
+      ALERT_RETRIES: "3"
+      REDIS_URL: "redis://redis:6379/0"
+      ALERT_DEDUP_TTL: "3600"
+      ALERT_DLQ_KEY: "alerting:dlq"
+      ALERT_DLQ_REPLAY_BATCH: "200"
+      ALERT_SINKS: "local, opensearch" # "slack,email,servicenow,local"
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/XXX/YYY/ZZZ" 
+      OPENSEARCH_INCIDENT_INDEX_PREFIX: "incidents"
+      EMAIL_SMTP_HOST: ""
+      EMAIL_SMTP_PORT: "587"
+      EMAIL_USER: ""
+      EMAIL_PASS: ""
+      EMAIL_TO: ""
+      SERVICENOW_URL: ""
+      SERVICENOW_USER: ""
+      SERVICENOW_PASS: ""
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  orchestrator:
+    build: 
+      context: .
+      dockerfile: services/orchestrator/Dockerfile
+    container_name: orchestrator
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    environment:
+      URL_PRE: http://preprocess:8000/featurize
+      URL_ML:  http://ml-inference:8000/score
+      URL_NLP: http://nlp-inference:8000/score
+      URL_FUS: http://fusion:8000/fuse
+      URL_ALR: http://alerting:8000/alert
+      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+    ports:
+      - "8000:8000"
+    depends_on:
+      preprocess:
+        condition: service_healthy
+      ml-inference:
+        condition: service_healthy
+      nlp-inference:
+        condition: service_healthy
+      fusion:
+        condition: service_healthy
+      alerting:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./tests:/app/tests:ro
+  ingestion:
+    build: 
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: ingestion
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - -w
+      - "${GUNICORN_WORKERS:-2}"
+      - -b
+      - 0.0.0.0:8000
+      - --timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+      - --access-logformat
+      - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
+    ports:
+      - "8001:8000"
+    environment:
+      TOPIC_RAW: raw-events
+      FORWARD_MODE: direct
+      ORCHESTRATOR_URL: http://orchestrator:8000/process
+      MAX_BODY_BYTES: "1048576"
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 60s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+  opensearch:
+    image: opensearchproject/opensearch:3.3.2
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"   # підлаштуй під свою RAM
+      - plugins.security.disabled=true             # dev-режим без TLS/автентифікації
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=wGxJSsqR88vts26wFLnSLeEt
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:3.3.0
+    container_name: opensearch-dashboards
+    environment:
+      - OPENSEARCH_HOSTS=http://opensearch:9200
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    ports:
+      - "5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  opensearch-data:

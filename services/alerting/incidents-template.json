@@ -1,0 +1,20 @@
+{
+  "index_patterns": ["incidents-*"],
+  "template": {
+    "settings": { "number_of_replicas": 0 },
+    "mappings": {
+      "properties": {
+        "@timestamp": {"type":"date"},
+        "risk_level": {"type":"keyword"},
+        "final_score":{"type":"double"},
+        "final_threshold":{"type":"double"},
+        "mode":{"type":"keyword"},
+        "reasons":{"type":"keyword"},
+        "topic":{"type":"keyword"},
+        "topic_score":{"type":"double"},
+        "hash_id":{"type":"keyword"},
+        "labels":{"type":"object","enabled":true}
+      }
+    }
+  }
+}

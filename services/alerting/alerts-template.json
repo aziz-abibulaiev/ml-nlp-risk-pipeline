@@ -1,0 +1,23 @@
+{
+  "index_patterns": ["alerting-*"],
+  "template": {
+    "settings": {
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp":      { "type": "date" },
+        "hash_id":         { "type": "keyword", "ignore_above": 256 },
+        "risk_level":      { "type": "keyword" },
+        "severity":        { "type": "integer" },
+        "final_score":     { "type": "double" },
+        "final_threshold": { "type": "double" },
+        "mode":            { "type": "keyword" },
+        "reasons":         { "type": "keyword" },
+        "context":         { "type": "object", "enabled": true },
+        "title":           { "type": "text" },
+        "summary":         { "type": "text" }
+      }
+    }
+  }
+}

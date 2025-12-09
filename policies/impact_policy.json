@@ -1,0 +1,92 @@
+{
+  "weights": {
+    "env": {
+      "dev":   0.00,
+      "stage": 0.04,
+      "prod":  0.08
+    },
+    "endpoint": {
+      "payments":       0.16,
+      "auth":           0.13,
+      "admin":          0.16,
+
+      "profile":        0.07,
+      "session":        0.09,
+      "password_reset": 0.11,
+      "files":          0.12,
+      "webhook":        0.10,
+      "public_api":     0.09,
+      "report_export":  0.08
+    },
+    "data_class": {
+      "none":        0.00,
+      "generic":     0.03,
+      "profile":     0.06,
+      "contact":     0.08,
+      "pii":         0.11,
+      "credentials": 0.16,
+      "tokens":      0.18,
+      "pci":         0.17,
+      "secrets":     0.20
+    },
+    "auth_state": {
+      "anonymous":       0.04,
+      "user":            0.07,
+      "admin":           0.11,
+      "service":         0.09,
+      "third_party_app": 0.08
+    },
+    "exposure": {
+      "internal": 0.03,
+      "public":   0.07
+    },
+    "blast": {
+      "low":  0.00,
+      "med":  0.08,
+      "high": 0.14
+    }
+  },
+  "caps": {
+    "topic_bump": {
+      "SQL Injection":                    0.55,
+      "NoSQL Injection":                  0.50,
+      "LDAP Injection":                   0.45,
+      "Command Injection":                0.55,
+      "Cross-Site Scripting":             0.40,
+
+      "Server-Side Request Forgery":      0.40,
+      "Cloud Metadata SSRF":              0.50,
+
+      "API Key Exposure":                 0.48,
+      "Sensitive Data Exposure":          0.48,
+
+      "Insecure Direct Object Reference": 0.50,
+
+      "Business Logic Abuse":             0.42,
+
+      "Authentication Bruteforce":        0.35,
+      "Credential Stuffing":              0.40,
+
+      "Security Misconfiguration":        0.30,
+      "WebSocket Abuse":                  0.24,
+
+      "Vulnerable and Outdated Components": 0.32,
+
+      "Software and Data Integrity Failures": 0.44,
+
+      "Security Logging and Monitoring Failures": 0.22,
+
+      "Denial of Service":                0.26
+    },
+    "max_impact": 1.0
+  },
+  "bins": {
+    "impact": [0.30, 0.60]
+  },
+  "matrix": [
+    ["low",    "medium",  "high"],
+    ["medium", "high",    "high"],
+    ["high",   "high",    "critical"],
+    ["high",   "critical","critical"]
+  ]
+}

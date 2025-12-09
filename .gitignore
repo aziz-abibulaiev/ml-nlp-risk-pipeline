@@ -1,0 +1,53 @@
+# Python
+*.py[cod]
+*.pyo
+*.pyd
+
+# venvs
+.venv/
+venv/
+env/
+
+# Jupyter / IDE
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Models
+!/models/.gitkeep
+/models/ml/.gitkeep
+/models/nlp/.gitkeep
+/models/**/*.joblib
+/models/**/*.meta.json
+/models/**/*.h5
+/models/ml_config.json
+/models/feature_order.sig
+
+# OpenSearch Dashboard templates
+/opensearch-data/*
+!/opensearch-data/alerts-dashboard-provision-template.ndjson
+
+# Data
+/data/*
+!/data/nlp_base.csv
+
+logs/
+*.log
+*.xlsx
+*.tmp
+
+# Tests
+/tests/*
+!/tests/owasp_top_10_smoke.py
+!/tests/gen_log_file_attacks.py
+
+# Docker artifacts
+*.pid
+*.pid.lock
+
+# Kaggle
+/.kaggle/
+.kagglehub/

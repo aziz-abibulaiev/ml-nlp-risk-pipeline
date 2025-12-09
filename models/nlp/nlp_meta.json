@@ -1,0 +1,70 @@
+{
+  "tfidf_lr": "/models/nlp/nlp_tfidf_lr.joblib",
+  "char_sgd": "/models/nlp/nlp_char_sgd.joblib",
+  "per_attack": {
+    "sql_injection": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__sql_injection.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__sql_injection.joblib"
+    },
+    "nosql_injection": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__nosql_injection.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__nosql_injection.joblib"
+    },
+    "ldap_injection": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__ldap_injection.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__ldap_injection.joblib"
+    },
+    "cmd_injection": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__cmd_injection.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__cmd_injection.joblib"
+    },
+    "xss": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__xss.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__xss.joblib"
+    },
+    "ssrf": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__ssrf.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__ssrf.joblib"
+    },
+    "api_key_exposure": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__api_key_exposure.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__api_key_exposure.joblib"
+    },
+    "auth_bruteforce": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__auth_bruteforce.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__auth_bruteforce.joblib"
+    },
+    "credential_stuffing": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__credential_stuffing.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__credential_stuffing.joblib"
+    },
+    "idor": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__idor.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__idor.joblib"
+    },
+    "misconfiguration": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__misconfiguration.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__misconfiguration.joblib"
+    },
+    "data_exposure": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__data_exposure.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__data_exposure.joblib"
+    },
+    "dos": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__dos.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__dos.joblib"
+    },
+    "websocket": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__websocket.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__websocket.joblib"
+    },
+    "ssrf_sensitive": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__ssrf_sensitive.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__ssrf_sensitive.joblib"
+    },
+    "business_logic": {
+      "tfidf_lr": "/models/nlp/nlp_tfidf_lr__business_logic.joblib",
+      "char_sgd": "/models/nlp/nlp_char_sgd__business_logic.joblib"
+    }
+  }
+}

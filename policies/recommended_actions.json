@@ -1,0 +1,128 @@
+{
+  "default": [
+    "Review recent requests from the same IP/user/tenant around this timestamp",
+    "Apply temporary rate-limiting or blocking on the offending IP/user/tenant",
+    "Correlate with application / infra logs to confirm whether the action succeeded"
+  ],
+  "topics": {
+    "SQL Injection": [
+      "[Immediate Action] Temporarily block suspicious IPs/users in WAF or reverse proxy",
+      "[Immediate Action] Check DB logs and recent queries for data exfiltration or schema tampering",
+      "[Short-term] Fix the specific endpoint to use parameterized queries (no string concatenation)",
+      "[Short-term] Disable verbose SQL error messages in production",
+      "[Long-term] Add automated SQLi tests to CI and keep WAF rules for injection attacks enabled"
+    ],
+    "NoSQL Injection": [
+      "[Immediate Action] Review recent requests to the affected endpoint, look for payloads with $where/$ne/$gt etc.",
+      "[Immediate Action] Block or rate-limit offending IPs/users at the edge/WAF",
+      "[Short-term] Sanitize and validate fields passed into NoSQL queries (block operators in user input)",
+      "[Short-term] Disable server-side eval / JavaScript execution in the NoSQL engine if possible",
+      "[Long-term] Introduce an allowlist of queryable fields and enforce strict schema validation"
+    ],
+    "LDAP Injection": [
+      "[Immediate Action] Review authentication / directory access logs for unusual LDAP filter patterns",
+      "[Immediate Action] Block suspicious IPs or accounts abusing the login / directory endpoints",
+      "[Short-term] Escape all user-controlled input in LDAP filters or use parameterized directory APIs",
+      "[Short-term] Restrict LDAP account used by the app to least-privilege (no wildcard searches)",
+      "[Long-term] Add tests for LDAP injection patterns and log all failed bind/search attempts with context"
+    ],
+    "Command Injection": [
+      "[Immediate Action] Immediately review logs for spawned shell commands / abnormal child processes on the host",
+      "[Immediate Action] Isolate or restart affected pod/host if you see suspicious shells or outbound connections",
+      "[Short-term] Remove shell invocation (shell=True) and use safe APIs without passing raw strings",
+      "[Short-term] Strictly validate/allowlist input before passing it to any OS-level tool",
+      "[Long-term] Add host-level monitoring (EDR, auditd) for suspicious process trees and outbound traffic"
+    ],
+    "Cross-Site Scripting (XSS)": [
+      "[Immediate Action] Identify vulnerable parameter/field and block or sanitize it server-side",
+      "[Immediate Action] Check for active malicious content stored in DB (comments, profiles, messages) and clean it up",
+      "[Short-term] Apply output encoding for all untrusted data in HTML/JS/attributes",
+      "[Short-term] Set Content-Security-Policy (CSP) and HttpOnly/SameSite flags on cookies",
+      "[Long-term] Introduce secure templating / component libraries and add XSS tests to CI"
+    ],
+    "Cross-Site Request Forgery": [
+      "[Immediate Action] Confirm whether the endpoint changes state (transfers, profile changes, admin actions)",
+      "[Immediate Action] Identify if the endpoint is missing CSRF protection and restrict it temporarily if needed",
+      "[Short-term] Enable CSRF tokens or same-site cookie protections for state-changing endpoints",
+      "[Short-term] Require re-auth or step-up auth for sensitive actions (transfers, password change)",
+      "[Long-term] Review all state-changing routes for proper CSRF and add regression tests"
+    ],
+    "Server-Side Request Forgery": [
+      "[Immediate Action] Inspect logs for outbound HTTP calls to internal IP ranges and metadata services",
+      "[Immediate Action] Block suspicious IPs/users and disable the vulnerable fetch/proxy endpoint if required",
+      "[Short-term] Introduce allowlist of outbound destinations for server-side HTTP clients",
+      "[Short-term] Block access to RFC1918 ranges and link-local addresses at network/WAF level",
+      "[Long-term] Add SSRF-specific tests and harden internal services that should never be reachable"
+    ],
+    "Cloud Metadata SSRF": [
+      "[Immediate Action] Immediately check cloud metadata/IMDS audit logs for token/credential access around this time",
+      "[Immediate Action] Rotate any potentially exposed instance / workload credentials",
+      "[Short-term] Block metadata endpoints (169.254.169.254, metadata.*) at host or VPC firewall level",
+      "[Short-term] Enforce IMDSv2 / metadata auth headers where supported (AWS/GCP/Azure)",
+      "[Long-term] Reduce IAM permissions for instance roles and add monitoring for metadata access anomalies"
+    ],
+    "API Key Exposure": [
+      "[Immediate Action] Revoke or rotate the exposed API key / token immediately",
+      "[Immediate Action] Search application logs, tickets and repos for the same key re-use",
+      "[Short-term] Replace hard-coded secrets with a secrets manager (Vault, KMS, etc.)",
+      "[Short-term] Add secret-scanning to CI/CD and pre-commit hooks",
+      "[Long-term] Enforce key scoping and expiry, and monitor usage for anomalies on regenerated keys"
+    ],
+    "Sensitive Data Exposure": [
+      "[Immediate Action] Determine what data was actually exposed (PII, credentials, financial, internal docs)",
+      "[Immediate Action] Remove or redact sensitive payloads from logs, tickets, and monitoring systems",
+      "[Short-term] Encrypt sensitive data at rest and in transit; mask it in logs and analytics",
+      "[Short-term] Add access controls / row-level security where applicable",
+      "[Long-term] Classify data and enforce DLP policies plus continuous monitoring for leaks"
+    ],
+    "Authentication Brute-Force": [
+      "[Immediate Action] Enable or tighten login rate limits and lockout policies for affected accounts/IP ranges",
+      "[Immediate Action] Check for any successful logins from the attacking IPs or suspicious geo/ASN",
+      "[Short-term] Enforce MFA on high-value accounts and admin users",
+      "[Short-term] Add CAPTCHA / bot protection on login and password reset flows",
+      "[Long-term] Correlate brute-force attempts with credential stuffing and add anomaly detection rules"
+    ],
+    "Credential Stuffing": [
+      "[Immediate Action] Check whether suspicious logins re-used known breached passwords or combos",
+      "[Immediate Action] Force password reset / session revocation for impacted accounts",
+      "[Short-term] Integrate with breached password checks (HaveIBeenPwned or similar)",
+      "[Short-term] Add device / IP reputation and risk-based authentication",
+      "[Long-term] Promote passwordless / WebAuthn for critical users and monitor for reuse across tenants"
+    ],
+    "Broken Access Control (IDOR)": [
+      "[Immediate Action] Identify which objects/tenants could be accessed by an unauthorized user",
+      "[Immediate Action] Invalidate any exposed session tokens and check access logs for mass-enumeration patterns",
+      "[Short-term] Enforce per-object authorization checks on the vulnerable endpoints",
+      "[Short-term] Replace sequential IDs with opaque surrogates where possible",
+      "[Long-term] Introduce systematic access-control layer and tests for every read/update/delete route"
+    ],
+    "Security Misconfiguration": [
+      "[Immediate Action] Disable debug endpoints, directory listings and stack traces in production",
+      "[Immediate Action] Remove default credentials and test accounts from exposed services",
+      "[Short-term] Align environment configs (prod/stage/dev) with hardened baselines",
+      "[Short-term] Enable security headers (HSTS, X-Frame-Options, CSP, etc.)",
+      "[Long-term] Automate config checks (CIS benchmarks, scanners) and enforce them in CI/CD"
+    ],
+    "Denial of Service": [
+      "[Immediate Action] Confirm if the service is currently degraded and enable stronger rate limits on hot endpoints",
+      "[Immediate Action] Identify top offending IPs/ASNs and block at WAF / edge if needed",
+      "[Short-term] Add timeouts, circuit breakers, and backpressure on expensive operations",
+      "[Short-term] Introduce per-tenant quotas and prioritise critical traffic",
+      "[Long-term] Plan capacity / autoscaling and add anomaly detection on traffic patterns"
+    ],
+    "WebSocket Abuse": [
+      "[Immediate Action] Review recent WebSocket connections from the offending IP/user and terminate abusive sessions",
+      "[Immediate Action] Tighten rate limits for messages, connections and rooms/channels",
+      "[Short-term] Enforce authentication and authorization on WS upgrades and subscription events",
+      "[Short-term] Restrict allowed origins and subprotocols for WebSocket endpoints",
+      "[Long-term] Add monitoring for WS message volume, fan-out abuse and suspicious broadcast patterns"
+    ],
+    "Business Logic Abuse": [
+      "[Immediate Action] Identify whether any financial/critical operations (refunds, discounts, transfers) were exploited",
+      "[Immediate Action] Temporarily disable or constrain the abused action (coupon, refund, price change) if feasible",
+      "[Short-term] Implement idempotency keys and server-side checks to prevent duplicates and races",
+      "[Short-term] Add validation on business rules (limits, thresholds, ownership checks) on the backend",
+      "[Long-term] Threat-model critical flows (checkout, refunds, payouts) and add abuse-focused test cases"
+    ]
+  }
+}

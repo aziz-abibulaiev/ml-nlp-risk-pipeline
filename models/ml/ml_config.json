@@ -1,0 +1,25 @@
+{
+  "fallback": {
+    "max_lat_ms": 800,
+    "max_payload_b": 12000,
+    "max_qp": 8,
+    "max_rate_rps": 7,
+    "w_lat": 0.12,
+    "w_susp": 0.50,
+    "w_ps": 0.12,
+    "w_qp": 0.08,
+    "w_json": 0.05,
+    "w_ip": -0.10,
+    "w_rate": 0.26,
+    "w_rule_strong": 0.18,
+    "w_rule_partial": 0.10
+  },
+  "routing": {
+    "heavy": {
+      "susp_thr": 0.18,
+      "psize_thr": 900,
+      "qp_thr": 3,
+      "lat_thr": 450
+    }
+  }
+}

@@ -1,0 +1,396 @@
+{
+  "meta": {
+    "version": "1.1",
+    "created_at": "2025-10-26T00:00:00Z",
+    "description": "Extended base rules for NLP rules engine. Contains safe strong regexes, partial token lists and a list of unsafe/complex regexes to avoid ReDoS on long inputs."
+  },
+  "config": {
+    "recommended_re_max_regex_input_len": 5000,
+    "notes": "If input length > recommended_re_max_regex_input_len, engine should skip 'unsafe_patterns' regex checks and rely on partial_tokens."
+  },
+  "attack_patterns": {
+    "sql_injection": {
+      "strong": [
+        "(?i)\\b(select|union|insert|update|delete|drop|truncate|replace|sleep|benchmark|information_schema)\\b",
+        "(?i)\\bor\\s+('?1'?|true)\\s*=\\s*('?1'?|true)\\b",
+        "(?i)\\bunion\\s+all\\s+select\\b"
+      ],
+      "partial_tokens": [
+        "' or",
+        "\" or",
+        " or 1=1",
+        " or true",
+        "--",
+        ";--",
+        "/*",
+        "*/",
+        "union select",
+        "sleep(",
+        "benchmark(",
+        "information_schema",
+        "exec(",
+        "concat(",
+        " waitfor delay",
+        " benchmark(",
+        "';waitfor delay",
+        " time-based sqli"
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 3
+    },
+    "nosql_injection": {
+      "strong": [
+        "(?i)\\b(db\\.|\\$ne\\b|\\$where\\b|\\$gt\\b|\\$lt\\b|\\$or\\b|\\$and\\b|find\\()"
+      ],
+      "partial_tokens": [
+        "$ne",
+        "$where",
+        "$gt",
+        "$lt",
+        "$or",
+        "$and",
+        "db.",
+        "find(",
+        "aggregate(",
+        "{\\s*\\$where"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 3
+    },
+    "ldap_injection": {
+      "strong": [
+        "(?i)\\(\\s*(uid|cn|objectClass)\\s*="
+      ],
+      "partial_tokens": [
+        "(uid=",
+        "(cn=",
+        "(objectClass=",
+        "userPassword",
+        "(|",
+        "&("
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 2
+    },
+    "cmd_injection": {
+      "strong": [
+        "(?i)(?:;|&&|\\|\\||\\|)\\s*(?:sh|bash|/bin/sh|/bin/bash|wget|curl|nc|netcat|perl|python|python3|tar|echo|id|uname|whoami)\\b",
+        "(?i)\\$\\([^)]*\\)",
+        "(?i)`[^`]+`"
+      ],
+      "partial_tokens": [
+        "&&",
+        "||",
+        "|",
+        ";wget",
+        ";curl",
+        "wget ",
+        "curl ",
+        "| sh",
+        "|bash",
+        "/dev/tcp/",
+        "$(",
+        "`",
+        "bash -i",
+        "nc -e",
+        "perl -e",
+        "python -c",
+        "/bin/sh -c",
+        "exec("
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 3
+    },
+    "xss": {
+      "strong": [
+        "(?i)<script\\b",
+        "(?i)javascript:",
+        "(?i)onerror\\s*=",
+        "(?i)onload\\s*="
+      ],
+      "partial_tokens": [
+        "onerror=",
+        "onload=",
+        "<svg",
+        "<img",
+        "<iframe",
+        "document.cookie",
+        "alert(",
+        "prompt(",
+        "innerHTML",
+        "<body",
+        "<iframe"
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 3
+    },
+    "ssrf": {
+      "strong": [
+        "(?i)(?:^|[?&])(url|target|callback|fetch|webhook|download|endpoint|redirect|image|src|proxy)\\s*=\\s*https?://",
+        "(?i)https?://(?:localhost|127\\.0\\.0\\.1|10\\.(?:[0-9]{1,3}\\.){2}[0-9]{1,3}|192\\.168\\.(?:[0-9]{1,3})\\.(?:[0-9]{1,3})|172\\.(?:1[6-9]|2[0-9]|3[0-1])\\.(?:[0-9]{1,3})\\.(?:[0-9]{1,3}))"
+      ],
+      "partial_tokens": [
+        "http://",
+        "https://",
+        "localhost",
+        "127.0.0.1",
+        "10.",
+        "192.168.",
+        "172.16.",
+        "172.17.",
+        "172.18.",
+        "172.19.",
+        "kubernetes.default.svc",
+        "unix:/",
+        "docker.sock",
+        "file://",
+        "gopher://"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 4
+    },
+    "api_key_exposure": {
+      "strong": [
+        "(?i)(api[_-]?key|api[_-]?token|aws_access_key_id|AKIA[0-9A-Z]{16}|secret_access_key)"
+      ],
+      "partial_tokens": [
+        "api_key",
+        "api-key",
+        "api_token",
+        "secret",
+        "aws_access_key_id",
+        "secret_access_key",
+        "AKIA"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 4
+    },
+    "auth_bruteforce": {
+      "strong": [
+        "(?i)(login\\s*failed|invalid\\s*(password|credentials)|failed\\s*login|authentication\\s*failed|account\\s*locked|too\\s*many\\s*attempts)"
+      ],
+      "partial_tokens": [
+        "login failed",
+        "invalid password",
+        "invalid credentials",
+        "failed login",
+        "authentication failed",
+        "too many attempts",
+        "account locked"
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 3
+    },
+    "credential_stuffing": {
+      "description": "Leaked creds reuse / combo-list / pwned passwords",
+      "strong": [
+        "(?i)credential\\s*stuffing",
+        "(?i)pwned\\s+password",
+        "(?i)breach(ed)?\\s+credential(s)?",
+        "(?i)rockyou\\.txt"
+      ],
+      "partial_tokens": [
+        "credential stuffing",
+        "pwned password",
+        "pwned list",
+        "breach dataset",
+        "breached credentials",
+        "leaked password",
+        "password reuse",
+        "reused credentials",
+        "combo list",
+        "leaked combos",
+        "known breach",
+        "common password",
+        "same password"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 2
+    },
+    "idor": {
+      "strong": [
+        "(?i)(?:^|[?&])(id|user_id|order_id|item_id)=\\d{2,}",
+        "(?i)(/users/\\d{2,}|/orders/\\d{2,})"
+      ],
+      "partial_tokens": [
+        "user_id=",
+        "id=",
+        "order_id=",
+        "item_id=",
+        "/admin",
+        "/users/",
+        "/orders/"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 4
+    },
+    "misconfiguration": {
+      "strong": [
+        "(?i)index\\s+of\\s*/",
+        "(?i)x-powered-by\\s*:\\s*[^\\s]+",
+        "(?i)traceback\\s*\\(\\s*most\\s+recent\\s+call\\s+last\\s*\\)\\s*:?",
+        "(?i)stack\\s*trace"
+      ],
+      "partial_tokens": [
+        "debug",
+        "stacktrace",
+        "traceback",
+        "Exception:",
+        "Configuration error",
+        "dump",
+        "credentials",
+        "secret",
+        "ssh-rsa"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 4
+    },
+    "data_exposure": {
+      "strong": [
+        "(?i)-----BEGIN\\s+(RSA|DSA|EC)?\\s*PRIVATE\\s*KEY-----",
+        "(?i)(?:^|\\D)\\d{3}-\\d{2}-\\d{4}(?:\\D|$)",
+        "(?i)authorization\\s*:\\s*bearer\\s+[A-Za-z0-9._-]{20,}",
+        "(?i)password\\s*[:=]\\s*[^\\s]{6,}"
+      ],
+      "partial_tokens": [
+        "ssn",
+        "social security",
+        "creditcard",
+        "card number",
+        "password",
+        "secret",
+        "private_key",
+        "pem"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 5
+    },
+    "dos": {
+      "strong": [
+        "(?i)429\\s+too\\s+many\\s+requests",
+        "(?i)request\\s+timeout",
+        "(?i)slowloris",
+        "(?i)http\\s+flood",
+        "(?i)request\\s+flood"
+      ],
+      "partial_tokens": [
+        "flood",
+        "http flood",
+        "request flood",
+        "too many requests",
+        "rate limit",
+        "429",
+        "timeout",
+        "slowloris",
+        "connection reset",
+        "burst traffic",
+        "many open connections",
+        "retry storm"
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 2
+    },
+    "websocket": {
+      "strong": [
+        "(?i)upgrade\\s*:\\s*websocket",
+        "(?i)sec-websocket-(key|version|protocol)"
+      ],
+      "partial_tokens": [
+        "websocket",
+        "ws://",
+        "wss://",
+        "upgrade: websocket"
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 3
+    },
+    "ssrf_sensitive": {
+      "strong": [
+        "(?i)169\\.254\\.169\\.254",
+        "(?i)169\\.254",
+        "(?i)metadata/instance",
+        "(?i)metadata.google.internal"
+      ],
+      "partial_tokens": [
+        "169.254",
+        "metadata",
+        "instance-id",
+        "openstack"
+      ],
+      "min_hits": 1,
+      "partial_norm_divisor": 2
+    },
+    "business_logic": {
+      "description": "Logic abuse: replay, double-discount/refund, race conditions",
+      "strong": [
+        "(?i)race\\s+condition",
+        "(?i)double\\s+refund",
+        "(?i)apply\\s+coupon.*(twice|again)",
+        "(?i)gift\\s*card.*(multiple|again)"
+      ],
+      "partial_tokens": [
+        "double discount",
+        "apply coupon twice",
+        "coupon replay",
+        "race condition",
+        "double refund",
+        "skip payment",
+        "bypass step validation",
+        "giftcard multiple times",
+        "gift card multiple times",
+        "price manipulation",
+        "negative quantity",
+        "loyalty points",
+        "multiple redemptions",
+        "replay attack",
+        "state verification"
+      ],
+      "min_hits": 2,
+      "partial_norm_divisor": 2
+    }
+  },
+  "misc": {
+    "keyword_list": [
+      "select",
+      "union",
+      "drop",
+      "<script",
+      "javascript:",
+      "or '1'='1",
+      "admin",
+      "root"
+    ],
+    "auth_tokens": [
+      "password",
+      "passwd",
+      "login failed",
+      "invalid password",
+      "invalid credentials",
+      "failed login"
+    ],
+    "misconf_tokens": [
+      "debug",
+      "stacktrace",
+      "exception",
+      "traceback",
+      "dump",
+      "credentials"
+    ],
+    "dos_tokens": [
+      "flood",
+      "too many requests",
+      "rate limit",
+      "429",
+      "timeout"
+    ]
+  },
+  "unsafe_patterns": {
+    "note": "These patterns are potentially ReDoS-prone or heavy — engine SHOULD NOT run them against long inputs. Use only when input length < RE_MAX_REGEX_INPUT_LEN or in controlled mode.",
+    "patterns": [
+      "(?i)^(?:([a-zA-Z]+)+)+$",
+      "(?i)^(a+)+$",
+      "(?i)([a-zA-Z]+)+.*\\1", 
+      "(?i)(?:([0-9a-zA-Z])+)+\\1"
+    ]
+  }
+}
