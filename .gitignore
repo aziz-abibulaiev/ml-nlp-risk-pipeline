@@ -36,6 +36,9 @@ env/
 /data/*
 !/data/nlp_base.csv
 
+# Honest corpus (TASK 04): captured data is large/regenerable; tooling under corpus/ is committed
+/data/external/
+
 # SR-BH 2020 ingestion artifacts (large parquet, regenerate with
 # jobs/retrain/build_ml_numeric_from_srbh.py)
 /data/srbh2020/
