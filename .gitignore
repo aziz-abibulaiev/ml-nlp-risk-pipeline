@@ -25,6 +25,8 @@ env/
 /models/**/*.h5
 /models/ml_config.json
 /models/feature_order.sig
+# SR-BH recalibration artifacts (regenerate with jobs/retrain/eval_srbh_transfer.py)
+/models/ml/srbh_recalib/
 
 # OpenSearch Dashboard templates
 /opensearch-data/*
