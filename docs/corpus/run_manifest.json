@@ -1,0 +1,171 @@
+{
+  "run_id": "phase2_20260802T181604Z",
+  "phase": 2,
+  "generated_at": "2026-08-02T18:23:36.000Z",
+  "seeds": {
+    "all": 42
+  },
+  "images": {
+    "vampi": "erev0s/vampi@sha256:0a5a224b6e14ae7da6a6ea265178ff71286ff903aec74adee98f660bb0e4ca12",
+    "proxy": "mitmproxy/mitmproxy@sha256:00b77b5d8804c8ad18cb6caefbf9d5849e895e8986c5ce011f4ae30f4385962f",
+    "generator_base": "python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de",
+    "crapi": "OWASP/crAPI docker-compose (crapi/*:latest)"
+  },
+  "tools": {
+    "sqlmap": "1.10.7",
+    "ffuf": "2.1.0",
+    "nuclei": "3.11.0",
+    "hydra": "9.5",
+    "mitmproxy": "12.2.3",
+    "seclists_commit": "e5e49caa6fb648476f3bca391b26a45a4f5d3f13"
+  },
+  "row_counts": {
+    "total": 21136,
+    "benign": 10908,
+    "attack": 10228,
+    "by_app": {
+      "vampi": 19631,
+      "crapi": 1505
+    },
+    "by_family": {
+      "bola_idor": 202,
+      "brute_force": 1034,
+      "business_logic_abuse": 202,
+      "cmd_injection": 750,
+      "cred_stuffing": 1037,
+      "mass_assignment": 202,
+      "nosql_injection": 755,
+      "path_traversal": 748,
+      "resource_exhaustion": 989,
+      "scan": 1100,
+      "sqli": 720,
+      "ssrf": 1098,
+      "ssti": 676,
+      "xss": 715
+    },
+    "by_tool": {
+      "custom": 5232,
+      "ffuf": 3902,
+      "hydra": 1034,
+      "sqlmap": 60
+    }
+  },
+  "behavioural_windows": {
+    "brute_force": 60,
+    "cred_stuffing": 60,
+    "resource_exhaustion": 60
+  },
+  "content_family_tools": {
+    "bola_idor": [
+      "custom"
+    ],
+    "brute_force": [
+      "hydra"
+    ],
+    "business_logic_abuse": [
+      "custom"
+    ],
+    "cmd_injection": [
+      "custom",
+      "ffuf"
+    ],
+    "cred_stuffing": [
+      "custom"
+    ],
+    "mass_assignment": [
+      "custom"
+    ],
+    "nosql_injection": [
+      "custom",
+      "ffuf"
+    ],
+    "path_traversal": [
+      "custom",
+      "ffuf"
+    ],
+    "resource_exhaustion": [
+      "custom"
+    ],
+    "scan": [
+      "custom",
+      "ffuf"
+    ],
+    "sqli": [
+      "custom",
+      "ffuf",
+      "sqlmap"
+    ],
+    "ssrf": [
+      "custom",
+      "ffuf"
+    ],
+    "ssti": [
+      "custom",
+      "ffuf"
+    ],
+    "xss": [
+      "custom",
+      "ffuf"
+    ]
+  },
+  "external": {
+    "zanbil": {
+      "source_lines": 10365152,
+      "parsed_rows": 10364865,
+      "parse_errors": 287,
+      "parse_error_rate": 2.8e-05,
+      "out": "/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline/data/corpus/phase2/external/zanbil.parquet"
+    },
+    "srbh": {
+      "rows": 907815,
+      "benign": 525195,
+      "attack": 382620,
+      "out": "/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline/data/corpus/phase2/external/srbh.parquet"
+    }
+  },
+  "splits": {
+    "train": {
+      "rows": 12140,
+      "sessions": 672,
+      "benign": 7026,
+      "attack": 5114
+    },
+    "calib": {
+      "rows": 6864,
+      "sessions": 218,
+      "benign": 2261,
+      "attack": 4603
+    },
+    "test": {
+      "rows": 2132,
+      "sessions": 178,
+      "benign": 1621,
+      "attack": 511
+    }
+  },
+  "checks": {
+    "schema_fields_present": true,
+    "zero_null_label": true,
+    "zero_null_label_source": true,
+    "labeller_no_detection_deps": true,
+    "benign_purity": true,
+    "benign_no_injection_markers": true,
+    "attack_delivery_95pct": true,
+    "benign_ge_attack": true,
+    "content_sqli": true,
+    "content_xss": true,
+    "content_cmd_injection": true,
+    "content_nosql_injection": true,
+    "content_ssti": true,
+    "content_path_traversal": true,
+    "content_ssrf": true,
+    "content_scan": true,
+    "behavioural_brute_force_windows>=50": true,
+    "behavioural_cred_stuffing_windows>=50": true,
+    "behavioural_resource_exhaustion_windows>=50": true,
+    "context_bola_idor_present": true,
+    "context_mass_assignment_present": true,
+    "context_business_logic_abuse_present": true,
+    "session_split_disjoint": true
+  }
+}

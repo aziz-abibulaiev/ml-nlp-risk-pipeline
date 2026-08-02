@@ -49,8 +49,10 @@ def main() -> int:
     ap.add_argument("--src-ip", required=True, help="this container's static IP, for the manifest")
     ap.add_argument("--n-users", type=int, default=8)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--min-pace", type=float, default=0.05)
-    ap.add_argument("--max-pace", type=float, default=0.4)
+    ap.add_argument("--min-pace", type=float, default=0.02)
+    ap.add_argument("--max-pace", type=float, default=0.2)
+    ap.add_argument("--skip-createdb", action="store_true",
+                    help="do not reset the DB (for parallel benign containers)")
     args = ap.parse_args()
 
     rng = random.Random(args.seed)
@@ -79,9 +81,11 @@ def main() -> int:
         finally:
             pace()
 
-    # seed / reset the app database so the run is repeatable
+    # seed / reset the app database so the run is repeatable (skipped for parallel workers,
+    # which would otherwise wipe each other's registered users mid-run)
     req("GET", "/")
-    req("GET", "/createdb")
+    if not args.skip_createdb:
+        req("GET", "/createdb")
     req("GET", "/users/v1")
     req("GET", "/books/v1")
 
