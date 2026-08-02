@@ -62,6 +62,14 @@ MODEL_DIR_V2 = "models/content_v2"
 # real benign is deduplicated on the request signature, then hash-split by that key so
 # train/calib never share a row. Source-level disjointness (train source != FPR-test source)
 # is the anti-circularity guarantee.
+# ---- TASK 06 Part A v2: multi-source leave-one-source-out ----
+MODEL_DIR_V3 = "models/content_v3"
+PER_SOURCE_BENIGN_CAP = 30_000         # cap per benign source in train (keeps TF-IDF tractable)
+PER_SOURCE_ATTACK_CAP = 30_000         # cap per attack source in train
+LOSO_CALIB_FRAC = 0.15                 # fraction of assembled real-benign train held for calib
+LOSO_BSTAR_EVAL = 80_000               # held-out benign source rows sampled for FP
+LOSO_ASTAR_EVAL = 40_000               # held-out attack rows sampled for recall
+
 REAL_BENIGN_TRAIN_FRAC = 0.7            # remainder -> calib (no test slice; FPR test is the OTHER source)
 ZANBIL_TRAIN_SAMPLE = 140_000          # unique zanbil rows drawn for A2 train+calib
 ZANBIL_FPR_TEST_SAMPLE = 200_000       # unique zanbil rows for A1 held-out FPR test
