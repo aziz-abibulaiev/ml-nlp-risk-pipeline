@@ -34,6 +34,10 @@ env/
 /data/*
 !/data/nlp_base.csv
 
+# SR-BH 2020 ingestion artifacts (large parquet, regenerate with
+# jobs/retrain/build_ml_numeric_from_srbh.py)
+/data/srbh2020/
+
 logs/
 *.log
 *.xlsx
@@ -43,6 +47,7 @@ logs/
 /tests/*
 !/tests/owasp_top_10_smoke.py
 !/tests/gen_log_file_attacks.py
+!/tests/srbh_ingestion_smoke.py
 
 # Docker artifacts
 *.pid
