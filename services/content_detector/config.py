@@ -56,3 +56,15 @@ BEHAVIOURAL_FAMILIES = ["brute_force", "cred_stuffing", "resource_exhaustion"]
 CONTEXT_FAMILIES = ["bola_idor", "mass_assignment", "business_logic_abuse"]
 
 MODEL_DIR = "models/content"
+
+# ---- TASK 06: real-benign training (declared sizes, not tuned) ----
+MODEL_DIR_V2 = "models/content_v2"
+# real benign is deduplicated on the request signature, then hash-split by that key so
+# train/calib never share a row. Source-level disjointness (train source != FPR-test source)
+# is the anti-circularity guarantee.
+REAL_BENIGN_TRAIN_FRAC = 0.7            # remainder -> calib (no test slice; FPR test is the OTHER source)
+ZANBIL_TRAIN_SAMPLE = 140_000          # unique zanbil rows drawn for A2 train+calib
+ZANBIL_FPR_TEST_SAMPLE = 200_000       # unique zanbil rows for A1 held-out FPR test
+SRBH_ATTACK_EVAL_SAMPLE = 100_000      # SR-BH attacks sampled for recall
+MANUAL_INSPECT_N = 100                 # high-confidence alerts on held-out benign to eyeball
+WAMM_HIDDEN_ATTACK_RATE = 0.095        # ~9-10% of SR-BH "benign" are real attacks (declare, don't clean)
