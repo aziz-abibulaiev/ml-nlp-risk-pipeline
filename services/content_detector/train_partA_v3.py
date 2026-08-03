@@ -83,33 +83,26 @@ class TextOnly:
         return np.concatenate(out) if out else np.array([])
 
 
-def main():
-    os.makedirs(C.MODEL_DIR_V4 if hasattr(C, "MODEL_DIR_V4") else "models/content_v4", exist_ok=True)
-    mdir = "models/content_v4"
-
-    # ---- in-domain temporal split of zanbil ----
+def build_indomain_data():
+    """Deterministic in-domain split shared by v3 training and the Parts B-F evaluation."""
     z = pd.read_parquet(ZANBIL, columns=["timestamp", "http_method", "url_path_raw", "url_query", "headers", "label"])
     z["request_body"] = ""
     z = z.loc[~_sig(z).duplicated()].copy()
     z["ts"] = pd.to_datetime(z.timestamp, errors="coerce")
     z = z[z.ts.notna()]
     boundary = z.ts.quantile(TEMPORAL_BOUNDARY_Q)
-    early = z[z.ts < boundary]; late = z[z.ts >= boundary]
-
-    rng = np.random.RandomState(C.SEED)
-    early = early.sample(frac=1.0, random_state=C.SEED)
+    early = z[z.ts < boundary].sample(frac=1.0, random_state=C.SEED)
+    late = z[z.ts >= boundary]
     train_ben = early.iloc[:TRAIN_BEN_CAP]
     calib_ben = early.iloc[TRAIN_BEN_CAP:TRAIN_BEN_CAP + CALIB_BEN_CAP]
     test_ben = late.sample(n=min(TEST_BEN_CAP, len(late)), random_state=C.SEED)
 
-    # ---- attacks: SR-BH split + testbed tools ; held-out SR-BH split + held-out tool ----
     srbh = SRC.load_srbh(); srbh_a = srbh[srbh.label == "attack"]
     def hbucket(k):
         return int(hashlib.sha256(f"{C.SEED}:{k}".encode()).hexdigest(), 16) % 10 < 7  # 70% train
     is_tr = _sig(srbh_a).map(hbucket)
-    srbh_tr = srbh_a[is_tr]; srbh_te = srbh_a[~is_tr]
-    srbh_tr = srbh_tr.sample(n=min(SRBH_ATTACK_CAP, len(srbh_tr)), random_state=C.SEED)
-    srbh_te = srbh_te.sample(n=min(40_000, len(srbh_te)), random_state=C.SEED)
+    srbh_tr = srbh_a[is_tr].sample(n=min(SRBH_ATTACK_CAP, int(is_tr.sum())), random_state=C.SEED)
+    srbh_te = srbh_a[~is_tr].sample(n=min(40_000, int((~is_tr).sum())), random_state=C.SEED)
 
     tb = SRC.load_testbed_full(); tb_a = tb[tb.label == "attack"]
     tb_tr = tb_a[tb_a.attack_tool != HELDOUT_TOOL]
@@ -119,12 +112,21 @@ def main():
     calib_atk = train_atk.sample(frac=0.15, random_state=C.SEED)
     fit_atk = train_atk.drop(index=calib_atk.index)
 
-    # ---- disjointness asserts ----
     ktr, kca, kte = set(_sig(train_ben)), set(_sig(calib_ben)), set(_sig(test_ben))
     assert not (ktr & kca), "train/calib benign overlap"
     assert not (ktr & kte), "train/test benign overlap"
     assert not (kca & kte), "calib/test benign overlap"
     assert not (set(_sig(srbh_tr)) & set(_sig(srbh_te))), "SR-BH train/test attack overlap"
+    return dict(train_ben=train_ben, calib_ben=calib_ben, test_ben=test_ben,
+                fit_atk=fit_atk, srbh_te=srbh_te, tb_te=tb_te, tb_all=tb, boundary=boundary)
+
+
+def main():
+    os.makedirs("models/content_v4", exist_ok=True)
+    mdir = "models/content_v4"
+    d = build_indomain_data()
+    train_ben, calib_ben, test_ben = d["train_ben"], d["calib_ben"], d["test_ben"]
+    fit_atk, srbh_te, tb_te, boundary = d["fit_atk"], d["srbh_te"], d["tb_te"], d["boundary"]
 
     fit_df = pd.concat([train_ben.assign(y=0), fit_atk.assign(y=1)], ignore_index=True)
     m = TextOnly().fit(fit_df, fit_df.y.values)
