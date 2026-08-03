@@ -40,10 +40,17 @@ REQ_PROCESS_LATENCY = Histogram(
 
 METHOD_CONF_THR = float(os.getenv("METHOD_CONF_THR", "0.60"))
 
+FUSION_ALPHA = float(getenv_str("FUSION_ALPHA", "0.2"))
+FUSION_BETA  = float(getenv_str("FUSION_BETA", "0.8"))
+
 CORE_KEEP = {
     "endpoint_len", "header_count", "payload_size", "latency_ms",
     "headers_entropy", "query_param_count", "path_depth",
     "suspicious_char_ratio", "is_json_payload", "ip_private",
+    "query_len", "query_entropy", "query_value_len_mean", "query_value_len_max",
+    "empty_query_value_ratio", "path_entropy", "path_digit_ratio", "path_upper_ratio",
+    "body_len", "body_entropy", "body_digit_ratio", "body_punct_ratio",
+    "pct_encoded_ratio", "header_value_total_len", "header_value_max_len",
     "http_method_code", "http_method_accuracy", "req_rate_60s",
     "method_GET", "method_POST", "method_PUT", "method_DEL", "method_Other",
 }
@@ -767,7 +774,18 @@ async def process(
             NLP_LAT.observe(time.perf_counter() - t_nlp)
 
         # 3) Fusion
-        ml_scores  = [p.get("score", 0.0) for p in (ml.get("per_model") or [])]
+        ml_primary_scores_map = ml.get("primary_model_scores") if isinstance(ml.get("primary_model_scores"), dict) else {}
+        if ml_primary_scores_map:
+            ml_scores = [float(v) for v in ml_primary_scores_map.values() if isinstance(v, (int, float))]
+        else:
+            ml_per = ml.get("per_model") or []
+            if (not ml_per) and isinstance(ml.get("per_model_scores"), dict):
+                ml_per = [
+                    {"kind": str(k), "score": float(v)}
+                    for k, v in (ml.get("per_model_scores") or {}).items()
+                    if isinstance(v, (int, float))
+                ]
+            ml_scores = [p.get("score", 0.0) for p in ml_per]
         nlp_scores = [p.get("score", 0.0) for p in (nlp.get("per_model") or [])]
 
         priv_ctx  = fv.get("priv_context") or {}
@@ -782,9 +800,25 @@ async def process(
             "user_id":   priv_ctx.get("user_id")   if isinstance(priv_ctx, dict) else None,
             **(risk_ctx if isinstance(risk_ctx, dict) else {}),
             "topics": topics_li if isinstance(topics_li, list) else [],
+            "ml_primary_score": ml.get("ml_primary_score", ml.get("ml_score")),
+            "ml_aux_novelty_score": ml.get("ml_aux_novelty_score"),
+            "ml_aux_novelty_threshold": ml.get("ml_aux_novelty_threshold"),
+            "ml_aux_novelty_hit": ml.get("ml_aux_novelty_hit"),
+            "ml_threshold": ml.get("threshold"),
+            "ml_threshold_hit": ml.get("threshold_hit"),
             "trace_id": trace,
             "hkey": priv_ctx.get("source_ip") or rid,
         }
+
+        ml_primary_for_fusion = (
+            float(ml.get("ml_primary_score"))
+            if isinstance(ml.get("ml_primary_score"), (int, float))
+            else (
+                float(ml.get("ml_score"))
+                if isinstance(ml.get("ml_score"), (int, float))
+                else ml.get("ml_score")
+            )
+        )
 
         # Prepare payload for fusion with both per-model and aggregated scores
         fusion_in = {
@@ -792,15 +826,15 @@ async def process(
             "context": context,
             "ml_scores": ml_scores,
             "nlp_scores": nlp_scores,
-            "ml_score": float(ml.get("ml_score")) if isinstance(ml.get("ml_score"), (int, float)) else ml.get("ml_score"),
+            "ml_score": ml_primary_for_fusion,
             "nlp_score": float(nlp.get("nlp_score")) if isinstance(nlp.get("nlp_score"), (int, float)) else nlp.get("nlp_score"),
         }
 
         ORCH_FUSION_OVERRIDE = os.getenv("ORCH_FUSION_OVERRIDE", "0").lower() in ("1","true","yes","on")
         if ORCH_FUSION_OVERRIDE:
             fusion_in["policy"] = {
-                "alpha": route.get("fusion", {}).get("alpha", 0.6),
-                "beta":  route.get("fusion", {}).get("beta",  0.4),
+                "alpha": route.get("fusion", {}).get("alpha", 0.2),
+                "beta":  route.get("fusion", {}).get("beta",  0.8),
                 "mode":  route.get("fusion", {}).get("mode",  "weighted"),
                 "threshold_final": route.get("thresholds", {}).get("final", POLICY["defaults"]["thresholds"]["final"]),
             }

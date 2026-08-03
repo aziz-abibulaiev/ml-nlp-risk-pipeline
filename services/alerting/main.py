@@ -6,14 +6,13 @@ import smtplib
 import asyncio
 import logging
 import random
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List, Tuple
-
 import uvicorn
 import httpx
 import redis
-from email.mime.text import MIMEText
 
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List, Tuple
+from email.mime.text import MIMEText
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
@@ -46,7 +45,14 @@ _ACTIONS: dict = {
 
 # Alert gating (by risk level)
 ALERT_MIN_RISK = os.getenv("ALERT_MIN_RISK", "medium").lower()
-_SEV_NAME_TO_NUM = {"normal":0, "low":1, "medium":2, "high":3, "critical":4}
+_SEV_NAME_TO_NUM = {
+    "no_risk": 0,
+    "normal":  0,
+    "low":     1,
+    "medium":  2,
+    "high":    3,
+    "critical":4,
+}
 _MIN_SEV_NUM = _SEV_NAME_TO_NUM.get(ALERT_MIN_RISK, 2)  # default: medium
 
 # Slack (optional)
@@ -168,27 +174,43 @@ def build_human_alert(dec: dict) -> dict:
     ip = ctx.get("source_ip") or "-"
     endpoint = ctx.get("endpoint") or "-"
     method = (ctx.get("method") or "-").upper()
-    risk = dec.get("risk_level") or "normal"
+    risk = (dec.get("risk_level") or "normal").lower()
     score = float(dec.get("final_score", 0.0))
     trace = ctx.get("trace_id") or dec.get("hash_id") or "-"
 
-    if topic_name:
-        title = f"[{risk.upper()}] Suspicious activity: {topic_name}"
-    else:
-        title = f"[{risk.upper()}] Suspicious activity detected"
+    benign = risk in ("no_risk", "normal")
 
-    actions = _ACTIONS.get("topics", {}).get(topic_name, _ACTIONS.get("default", []))
-    actions_md = "\n".join(f"- {a}" for a in actions)
-    
-    text = (
-        f"At '{ts} UTC', user '{user_id}' from IP '{ip}' triggered activity that "
-        f"matches '{topic_name or 'an anomalous request'}' on endpoint '{endpoint}' via '{method}'.\n\n"
-        f"- Risk level: '{risk}' (score: {score:.3f})\n"
-        f"- Top topic: '{topic_name or '-'}' (confidence: {topic_score:.2f})\n"
-        f"- Hash/Trace: `{trace}`\n\n"
-        "Recommended actions:\n"
-        f"{actions_md}\n"
-    )
+    if benign:
+        if topic_name:
+            title = f"[{risk.upper()}] Benign event: {topic_name}"
+        else:
+            title = f"[{risk.upper()}] Benign event"
+
+        text = (
+            f"At '{ts} UTC', user '{user_id}' from IP '{ip}' performed a benign request "
+            f"to endpoint '{endpoint}' via '{method}'.\n\n"
+            f"- Risk level: '{risk}' (score: {score:.3f})\n"
+            f"- Top topic: '{topic_name or '-'}' (confidence: {topic_score:.2f})\n"
+            f"- Hash/Trace: `{trace}`\n"
+        )
+    else:
+        if topic_name:
+            title = f"[{risk.upper()}] Suspicious activity: {topic_name}"
+        else:
+            title = f"[{risk.upper()}] Suspicious activity detected"
+
+        actions = _ACTIONS.get("topics", {}).get(topic_name, _ACTIONS.get("default", []))
+        actions_md = "\n".join(f"- {a}" for a in actions)
+
+        text = (
+            f"At '{ts} UTC', user '{user_id}' from IP '{ip}' triggered activity that "
+            f"matches '{topic_name or 'an anomalous request'}' on endpoint '{endpoint}' via '{method}'.\n\n"
+            f"- Risk level: '{risk}' (score: {score:.3f})\n"
+            f"- Top topic: '{topic_name or '-'}' (confidence: {topic_score:.2f})\n"
+            f"- Hash/Trace: `{trace}`\n\n"
+            "Recommended actions:\n"
+            f"{actions_md}\n"
+        )
 
     return {
         "title": title,
@@ -225,7 +247,7 @@ def _month_index(prefix: str) -> str:
     return f"{prefix}-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
 
 def _severity_num(level: str) -> int:
-    return {"normal":0, "low":1, "medium":2, "high":3, "critical":4}.get(level, 0)
+    return _SEV_NAME_TO_NUM.get(str(level).lower(), 0)
 
 def _mk_title(f: FusionSnapshot) -> str:
     ctx = f.context or {}

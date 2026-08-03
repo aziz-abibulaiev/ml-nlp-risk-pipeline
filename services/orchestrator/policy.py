@@ -7,7 +7,6 @@ DEFAULT_POLICY: Dict[str, Any] = {
     "latency_budget_ms": 80,
     "ml_models": ["if","ocsvm","ae","lstm_ae"],  # IF + OCSVM + AE + LSTM-AE
     "nlp_models": ["rules","tfidf_lr"],   # regex guardrail + TF-IDF+LR
-    "fusion": {"mode":"weighted", "alpha":0.6, "beta":0.4},
     "thresholds": {"ml":0.7, "nlp":0.6, "final":0.7},
     "shadow": {"nlp": [], "ml": []}
   },
@@ -18,12 +17,11 @@ DEFAULT_POLICY: Dict[str, Any] = {
       "ml_models": ["if","ocsvm","ae","lstm_ae"],
       "nlp_models": ["rules","cnn_char"],
       "thresholds": {"final": 0.65},
-      "fusion": {"mode":"weighted", "alpha":0.5, "beta":0.5}
     },
     { "match": {"log_kind":"access_log", "suspect_regex": r"select|union|<script"},
       "latency_budget_ms": 90,
-      "nlp_models": ["rules","bert_cls"],    # важча модель при підозрі
-      "shadow": {"nlp":["tfidf_lr"]}         # збираємо офлайн метрики
+      "nlp_models": ["rules","bert_cls"],
+      "shadow": {"nlp":["tfidf_lr"]}
     },
 
     # AWS CloudTrail

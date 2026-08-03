@@ -8,10 +8,14 @@ import sys
 import time
 import zlib
 import requests
+import re
 
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.chart import PieChart, DoughnutChart, BarChart, Reference
+from openpyxl.chart.label import DataLabelList
 from collections import Counter
 
 # ---- Config / Defaults (same as bash script) ----
@@ -28,6 +32,86 @@ FAKE_IPS_PRIVATE = ["10.0.5.12", "10.1.2.3", "172.16.22.8", "192.168.1.44"]
 FAKE_USERS = ["alice", "bob", "carol", "dave", "erin", "admin", "root", "svc-app"]
 FAKE_LATENCY = ["121", "436", "697", "321", "506", "405", "793", "233", "132", "549", "435"]
 
+ACCESS_LOG_RE = re.compile(
+    r'^(?P<ip>\S+) \S+ \S+ \[(?P<ts>[^\]]+)\] '
+    r'"(?P<method>\S+) (?P<path>\S+) (?P<proto>[^"]+)" '
+    r'(?P<status>\d{3}) (?P<size>\S+) '
+    r'"(?P<ref>[^"]*)" "(?P<ua>[^"]*)"'
+)
+
+ALERT_LEVELS = {"medium", "high", "critical"}
+SUSPICIOUS_LEVELS = {"low", "medium", "high", "critical"}
+
+
+def is_positive(risk_level: str, positive_levels: set[str]) -> bool:
+    return normalize_risk_level(risk_level) in positive_levels
+
+def parse_access_log_line(line: str) -> Optional[Dict[str, str]]:
+    """
+    Parse a standard Apache/Nginx combined log line.
+
+    Returns a dict with method, path, ip, user_agent, referrer, status, size.
+    If the line does not match the pattern, returns None.
+    """
+    m = ACCESS_LOG_RE.match(line.strip())
+    if not m:
+        return None
+
+    d = m.groupdict()
+    return {
+        "ip": d.get("ip") or "",
+        "method": d.get("method") or "GET",
+        "path": d.get("path") or "/",
+        "status": d.get("status") or "",
+        "size": d.get("size") or "",
+        "ref": d.get("ref") or "",
+        "ua": d.get("ua") or "",
+    }
+
+def load_benign_from_log(
+    path: str,
+    max_events: int = 5000,
+) -> List[Dict[str, Any]]:
+    """
+    Read access.log and build a list of "benign" events:
+    endpoint, method, payload, source_ip, user_id, latency_ms.
+
+    payload = path + referrer + user-agent so that the NLP pipeline sees realistic text.
+    """
+    events: List[Dict[str, Any]] = []
+
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if len(events) >= max_events:
+                    break
+                parsed = parse_access_log_line(line)
+                if not parsed:
+                    continue
+
+                method = parsed["method"]
+
+                path_full = parsed["path"]
+                endpoint = path_full.split("?")[0] or "/"
+
+                payload = f"{path_full} REF={parsed['ref']} UA={parsed['ua']}"
+
+                latency = pick_latency("benign", len(events) + 1, "")
+
+                ev = {
+                    "endpoint": endpoint,
+                    "method": method,
+                    "payload": payload,
+                    "source_ip": parsed["ip"],
+                    # For benign traffic we can safely keep user_id empty
+                    "user_id": "",
+                    "latency_ms": latency,
+                }
+                events.append(ev)
+    except FileNotFoundError:
+        print(f"!! benign log file not found: {path}", file=sys.stderr)
+
+    return events
 
 def say(msg: str) -> None:
     if QUIET:
@@ -185,6 +269,9 @@ def build_csv_row(
     row["source_ip"] = event.get("source_ip")
     row["user_id"] = event.get("user_id")
     row["attack_group"] = event.get("attack_group")
+    g = str(row.get("attack_group") or "").strip()
+    row["gt_label"] = "Benign" if g.lower() == "benign" else g
+    row["pred_risk"] = "Normal"
 
     # raw human / json
     row["response_raw"] = " ".join(raw_response.split())
@@ -267,7 +354,226 @@ def build_csv_row(
     row["status"] = parsed.get("status")
     row["trace_id"] = parsed.get("trace_id") or ctx.get("trace_id")
 
+    rn = normalize_risk_level(row.get("risk_level"))
+    if rn not in ("critical", "high", "medium", "low", "normal"):
+        rn = "normal"
+    row["pred_risk"] = {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "normal": "Normal",
+    }[rn]
+    
     return row
+
+def normalize_risk_level(x) -> str:
+    if x is None:
+        return "unknown"
+    s = str(x).strip().lower()
+    aliases = {
+        "crit": "critical",
+        "critical": "critical",
+        "high": "high",
+        "med": "medium",
+        "medium": "medium",
+        "low": "low",
+
+        "normal": "normal",
+        "no_risk": "normal",
+        "norisk": "normal",
+        "none": "normal",
+        "info": "normal",
+        "ok": "normal",
+        "pass": "normal",
+
+        "": "unknown",
+    }
+    return aliases.get(s, s)
+
+def _risk_norm_5(x: Any) -> str:
+    """Normalize to exactly one of: critical/high/medium/low/normal."""
+    rn = normalize_risk_level(x)
+    if rn not in ("critical", "high", "medium", "low", "normal"):
+        return "normal"
+    return rn
+
+def _safe_div(a: float, b: float) -> float:
+    return (a / b) if b else 0.0
+
+def compute_mixed_confusion(rows: List[Dict[str, Any]], positive_levels: set[str]) -> Dict[str, Any]:
+    """
+    Single binary detection scheme (Reviewer-2 safe):
+      gt_is_attack = (gt_label != "Benign")
+      pred_is_attack = (pred_risk in positive_levels)
+    """
+    TP = FP = FN = TN = 0
+    N_attack = N_benign = 0
+
+    for r in rows:
+        gt = str(r.get("gt_label") or r.get("attack_group") or "Benign").strip()
+        gt_is_attack = (gt.lower() != "benign")
+
+        pr = r.get("pred_risk") or r.get("risk_level")
+        pred_r = _risk_norm_5(pr)
+        pred_is_attack = (pred_r in positive_levels)
+
+        if gt_is_attack:
+            N_attack += 1
+            if pred_is_attack:
+                TP += 1
+            else:
+                FN += 1
+        else:
+            N_benign += 1
+            if pred_is_attack:
+                FP += 1
+            else:
+                TN += 1
+
+    precision = _safe_div(TP, TP + FP)
+    recall = _safe_div(TP, TP + FN)
+    f1 = _safe_div(2 * precision * recall, precision + recall)
+    fpr = _safe_div(FP, FP + TN)  # = FP / N_benign
+
+    return {
+        "N_total": N_attack + N_benign,
+        "N_attack": N_attack,
+        "N_benign": N_benign,
+        "TP": TP, "FP": FP, "FN": FN, "TN": TN,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "fpr": fpr,
+    }
+
+def build_table2_mixed_traffic(rows: List[Dict[str, Any]]) -> Tuple[List[str], List[List[Any]]]:
+    """
+    Table 2. Mixed-traffic detection performance.
+    """
+    A = compute_mixed_confusion(rows, positive_levels=ALERT_LEVELS)       # Medium+
+    B = compute_mixed_confusion(rows, positive_levels=SUSPICIOUS_LEVELS)  # Low+
+
+    headers = [
+        "Operating point",
+        "Threshold rule",
+        "N_total",
+        "N_attack",
+        "N_benign",
+        "TP", "FP", "FN", "TN",
+        "Precision (%)",
+        "Recall (%)",
+        "F1 (%)",
+        "FPR (%)",
+    ]
+
+    def row(op_name: str, rule: str, d: Dict[str, Any]) -> List[Any]:
+        return [
+            op_name,
+            rule,
+            d["N_total"],
+            d["N_attack"],
+            d["N_benign"],
+            d["TP"], d["FP"], d["FN"], d["TN"],
+            round(d["precision"] * 100.0, 2),
+            round(d["recall"] * 100.0, 2),
+            round(d["f1"] * 100.0, 2),
+            round(d["fpr"] * 100.0, 3),
+        ]
+
+    rows_out = [
+        row("A — Alert (Medium+)", "pred_is_attack = pred_risk ∈ {Medium, High, Critical}", A),
+        row("B — Suspicious (Low+)", "pred_is_attack = pred_risk ∈ {Low, Medium, High, Critical}", B),
+    ]
+    return headers, rows_out
+
+def build_table3_risk_stratification(
+    rows: List[Dict[str, Any]],
+    group_order: List[str],
+    group_labels: Dict[str, str],
+) -> Tuple[List[str], List[List[Any]]]:
+    """
+    Table 3. Risk-level stratification by ground-truth class.
+    No per-class TP/FP/TN/FN.
+    """
+    # counts[gt_label][risk] -> n
+    counts = defaultdict(lambda: Counter())
+
+    for r in rows:
+        gt = str(r.get("gt_label") or r.get("attack_group") or "Benign").strip()
+        # normalize gt for ordering: your generator uses internal ids (e.g., sql_injection, benign)
+        gt_key = gt.lower()
+        if gt_key == "benign":
+            g = "benign"
+        else:
+            g = gt  # keep as-is (internal group id)
+
+        pr = _risk_norm_5(r.get("pred_risk") or r.get("risk_level"))
+        counts[g]["support"] += 1
+        counts[g][pr] += 1
+
+    headers = [
+        "Ground-truth class",
+        "Support (n)",
+        "Critical (n)",
+        "High (n)",
+        "Medium (n)",
+        "Low (n)",
+        "Normal (n)",
+        "Alert rate @Medium+ (%)",
+    ]
+
+    out = []
+    for g in group_order:
+        c = counts.get(g, Counter())
+        support = int(c.get("support", 0))
+        crit = int(c.get("critical", 0))
+        high = int(c.get("high", 0))
+        med  = int(c.get("medium", 0))
+        low  = int(c.get("low", 0))
+        norm = int(c.get("normal", 0))
+
+        alert_rate = round(((crit + high + med) / support) * 100.0, 1) if support else 0.0
+
+        out.append([
+            group_labels.get(g, "Benign" if g == "benign" else g),
+            support,
+            crit, high, med, low, norm,
+            alert_rate,
+        ])
+
+    return headers, out
+
+def add_table_sheet(
+    wb: Workbook,
+    sheet_name: str,
+    headers: List[str],
+    rows: List[List[Any]],
+    freeze_panes: str = "A2",
+    percent_cols: Optional[set[int]] = None,  # 1-based indices
+) -> None:
+    if sheet_name in wb.sheetnames:
+        del wb[sheet_name]
+    ws = wb.create_sheet(title=sheet_name)
+
+    ws.append(headers)
+    for r in rows:
+        ws.append(r)
+
+    ws.freeze_panes = freeze_panes
+
+    # number formats
+    if percent_cols:
+        for rr in range(2, ws.max_row + 1):
+            for c in percent_cols:
+                ws.cell(row=rr, column=c).number_format = "0.00"
+
+    # auto-fit
+    for idx, col in enumerate(headers, start=1):
+        col_letter = get_column_letter(idx)
+        vals = [str(ws.cell(row=r, column=idx).value or "") for r in range(1, ws.max_row + 1)]
+        max_len = max(len(col), *(len(v) for v in vals)) if vals else len(col)
+        ws.column_dimensions[col_letter].width = min(max_len + 2, 70)
 
 def run_group(
     session: requests.Session,
@@ -283,14 +589,18 @@ def run_group(
     payloads: List[str],
     seed: str,
     csv_rows: Optional[List[Dict[str, Any]]],
-) -> None:
+    attack_budget: Optional[int] = None,
+) -> int:
 
     if only_group and only_group != group_name:
-        return
+        return 0
 
     url = base_url.rstrip("/") + path_process
+    sent = 0
 
     for idx, pl in enumerate(payloads, start=1):
+        if attack_budget is not None and sent >= int(attack_budget):
+            break
         # IP/user selection logic is the same as in the bash script
         if group_name in {
             "sql_injection",
@@ -342,6 +652,317 @@ def run_group(
         )
         if csv_rows is not None:
             csv_rows.append(build_csv_row(event, raw_response=raw, parsed=parsed))
+        sent += 1
+    return sent
+
+def run_benign_events(
+    session: requests.Session,
+    base_url: str,
+    path_process: str,
+    detailed: bool,
+    token: str,
+    pretty: bool,
+    benign_events: List[Dict[str, Any]],
+    csv_rows: Optional[List[Dict[str, Any]]],
+) -> None:
+    """
+    Send "benign" events from access.log through /process.
+
+    We do not modify endpoint/method/ip from the log; we just build an event
+    and forward it to the orchestrator.
+    """
+    if not benign_events:
+        return
+
+    url = base_url.rstrip("/") + path_process
+
+    for idx, ev in enumerate(benign_events, start=1):
+        endpoint = ev["endpoint"]
+        method = ev["method"]
+        payload = ev["payload"]
+        source_ip = ev["source_ip"]
+        user_id = ev["user_id"]
+        latency = ev["latency_ms"]
+
+        # Use the same build_event, but do NOT overwrite ip/user
+        event = build_event(
+            payload=payload,
+            endpoint=endpoint,
+            method=method,
+            source_ip=source_ip,
+            user_id=user_id,
+            latency=latency,
+        )
+        # Mark the group so that CSV clearly shows this is benign traffic
+        event["attack_group"] = "benign"
+
+        raw, parsed = send_request(
+            session=session,
+            url=url,
+            detailed=detailed,
+            token=token,
+            event=event,
+            attack_name="benign",
+            idx=idx,
+            pretty=pretty,
+        )
+        if csv_rows is not None:
+            csv_rows.append(build_csv_row(event, raw_response=raw, parsed=parsed))
+
+def _dl_values(num_fmt: str = "0") -> DataLabelList:
+    dl = DataLabelList()
+    dl.showVal = True
+    dl.showPercent = False
+    dl.showCatName = False
+    dl.showSerName = False
+    dl.showLegendKey = False
+    dl.numFmt = num_fmt
+    return dl
+
+def _dl_val_and_cat(num_fmt: str = "0") -> DataLabelList:
+    """Show BOTH value and category name on bars (helps when axis tick labels are not visible)."""
+    dl = DataLabelList()
+    dl.showVal = True
+    dl.showCatName = True
+    dl.showPercent = False
+    dl.showSerName = False
+    dl.showLegendKey = False
+    dl.numFmt = num_fmt
+    return dl
+
+def add_charts_from_table2(
+    wb: Workbook,
+    table_sheet: str = "table2_mixed_traffic",
+    out_sheet: str = "charts_table2",
+) -> None:
+    if table_sheet not in wb.sheetnames:
+        return
+
+    src = wb[table_sheet]
+
+    n_attack = int(src.cell(row=2, column=4).value or 0)
+    n_benign = int(src.cell(row=2, column=5).value or 0)
+    total = max(1, n_attack + n_benign)
+
+    prec_A = float(src.cell(row=2, column=10).value or 0.0)
+    rec_A  = float(src.cell(row=2, column=11).value or 0.0)
+    f1_A   = float(src.cell(row=2, column=12).value or 0.0)
+    fpr_A  = float(src.cell(row=2, column=13).value or 0.0)
+
+    prec_B = float(src.cell(row=3, column=10).value or 0.0)
+    rec_B  = float(src.cell(row=3, column=11).value or 0.0)
+    f1_B   = float(src.cell(row=3, column=12).value or 0.0)
+    fpr_B  = float(src.cell(row=3, column=13).value or 0.0)
+
+    if out_sheet in wb.sheetnames:
+        del wb[out_sheet]
+    ws = wb.create_sheet(title=out_sheet)
+
+    # ---- Pie (attacks vs benign) ----
+    ws["A1"] = "Class"
+    ws["B1"] = "Count"
+    ws["C1"] = "Share (%)"
+    ws["D1"] = "Legend label"
+
+    att_share = (n_attack / total) * 100.0
+    ben_share = (n_benign / total) * 100.0
+
+    ws["A2"] = "Attacks"
+    ws["B2"] = n_attack
+    ws["C2"] = round(att_share, 1)
+    ws["D2"] = f"Attacks — {n_attack} ({att_share:.1f}%)"
+
+    ws["A3"] = "Benign"
+    ws["B3"] = n_benign
+    ws["C3"] = round(ben_share, 1)
+    ws["D3"] = f"Benign — {n_benign} ({ben_share:.1f}%)"
+
+    pie = PieChart()
+    pie.title = "Mixed traffic: Attacks vs Benign"
+    pie.add_data(Reference(ws, min_col=2, min_row=2, max_row=3), titles_from_data=False)
+    pie.set_categories(Reference(ws, min_col=4, min_row=2, max_row=3))
+    pie.dataLabels = _dl_values(num_fmt="0")
+    pie.width = 18
+    pie.height = 10
+    ws.add_chart(pie, "F1")
+
+    # ---- Trade-off bars (Table 2) ----
+    ws["A6"] = "Metric"
+    ws["B6"] = "A — Alert (Medium+)"
+    ws["C6"] = "B — Suspicious (Low+)"
+
+    metrics = [
+        ("Precision (%)", prec_A, prec_B),
+        ("Recall (%)",    rec_A,  rec_B),
+        ("F1 (%)",        f1_A,   f1_B),
+        ("FPR (%)",       fpr_A,  fpr_B),
+    ]
+    for i, (m, a, b) in enumerate(metrics, start=7):
+        ws.cell(row=i, column=1).value = m
+        ws.cell(row=i, column=2).value = float(a)
+        ws.cell(row=i, column=3).value = float(b)
+
+    bar = BarChart()
+    bar.type = "bar"
+    bar.grouping = "clustered"
+    bar.title = "Operating-point trade-off (Table 2)"
+
+    # IMPORTANT: for type="bar" Excel/openpyxl часто “міняє місцями” підписи осей,
+    # тому ставимо так, щоб візуально було правильно:
+    bar.x_axis.title = "Metric"
+    bar.y_axis.title = "Percent (%)"
+
+    data = Reference(ws, min_col=2, min_row=6, max_col=3, max_row=10)  # includes header row (6)
+    cats = Reference(ws, min_col=1, min_row=7, max_row=10)             # metric names
+    bar.add_data(data, titles_from_data=True)
+    bar.set_categories(cats)
+
+    # Show metric name on bars + value (fixes "no metric labels" issue)
+    bar.dataLabels = _dl_val_and_cat(num_fmt="0.00")
+    bar.width = 26
+    bar.height = 11
+    ws.add_chart(bar, "F13")
+
+
+def add_charts_from_table3(
+    wb: Workbook,
+    table_sheet: str = "table3_risk_stratification",
+    out_sheet: str = "charts_table3",
+    include_benign: bool = False,
+) -> None:
+    if table_sheet not in wb.sheetnames:
+        return
+
+    src = wb[table_sheet]
+
+    classes = []
+    total_events_all = 0
+
+    for r in range(2, src.max_row + 1):
+        cls = src.cell(row=r, column=1).value
+        if not cls:
+            continue
+        cls_s = str(cls).strip()
+        support = int(src.cell(row=r, column=2).value or 0)
+        total_events_all += support
+
+        if (not include_benign) and cls_s.lower() == "benign":
+            continue
+
+        # Table 3 columns:
+        # 3 Crit, 4 High, 5 Med, 6 Low, 7 Normal, 8 Alert rate
+        crit = int(src.cell(row=r, column=3).value or 0)
+        high = int(src.cell(row=r, column=4).value or 0)
+        med  = int(src.cell(row=r, column=5).value or 0)
+        low  = int(src.cell(row=r, column=6).value or 0)
+        norm = int(src.cell(row=r, column=7).value or 0)
+        ar   = float(src.cell(row=r, column=8).value or 0.0)
+
+        classes.append({
+            "name": cls_s,
+            "support": support,
+            "share": (support / max(1, total_events_all)) * 100.0,  # updated after total known, but ok for rough; we’ll recompute
+            "normal": norm,
+            "low": low,
+            "medium": med,
+            "high": high,
+            "critical": crit,
+            "alert_rate": ar,
+        })
+
+    total_events_all = max(1, total_events_all)
+
+    # recompute share precisely + sort by SUPPORT desc (largest on top)
+    for c in classes:
+        c["share"] = (c["support"] / total_events_all) * 100.0
+    classes.sort(key=lambda x: x["support"], reverse=True)
+
+    if out_sheet in wb.sheetnames:
+        del wb[out_sheet]
+    ws = wb.create_sheet(title=out_sheet)
+
+    # ---- Build chart-data table: rows=classes, cols=risk levels (batched by risk level as SERIES) ----
+    ws["A1"] = "Class"
+    ws["B1"] = "Support (n)"
+    ws["C1"] = "Share (%)"
+    ws["D1"] = "Normal (n)"
+    ws["E1"] = "Low (n)"
+    ws["F1"] = "Medium (n)"
+    ws["G1"] = "High (n)"
+    ws["H1"] = "Critical (n)"
+    ws["I1"] = "Alert rate @Medium+ (%)"
+
+    for i, c in enumerate(classes, start=2):
+        ws.cell(row=i, column=1).value = c["name"]
+        ws.cell(row=i, column=2).value = int(c["support"])
+        ws.cell(row=i, column=3).value = float(round(c["share"], 1))
+        ws.cell(row=i, column=4).value = int(c["normal"])
+        ws.cell(row=i, column=5).value = int(c["low"])
+        ws.cell(row=i, column=6).value = int(c["medium"])
+        ws.cell(row=i, column=7).value = int(c["high"])
+        ws.cell(row=i, column=8).value = int(c["critical"])
+        ws.cell(row=i, column=9).value = float(c["alert_rate"])
+
+    last_row = 1 + len(classes)
+
+    # ---- Chart 1: Risk-level distribution (batched by risk level; classes on Y) ----
+    dist = BarChart()
+    dist.type = "bar"
+    dist.grouping = "clustered"
+    dist.title = "Risk-level distribution by ground-truth class (Table 3)"
+
+    # same axis-title quirk handling for horizontal bar charts:
+    dist.x_axis.title = "Class"
+    dist.y_axis.title = "Count (n)"
+
+    # data = risk columns D..H (Normal..Critical)
+    data = Reference(ws, min_col=4, min_row=1, max_col=8, max_row=last_row)
+    cats = Reference(ws, min_col=1, min_row=2, max_row=last_row)
+
+    dist.add_data(data, titles_from_data=True)
+    dist.set_categories(cats)
+
+    # show values (counts)
+    dist.dataLabels = _dl_values(num_fmt="0")
+    dist.width = 42
+    dist.height = max(14, 0.7 * len(classes) + 8)
+
+    # put biggest class on top
+    dist.y_axis.scaling.orientation = "maxMin"
+
+    ws.add_chart(dist, "K2")
+
+    # ---- Chart 2: Alert rate @Medium+ by class (sorted by SUPPORT desc) ----
+    start_row = last_row + 4
+    ws.cell(row=start_row, column=1).value = "Class — n (share of all events)"
+    ws.cell(row=start_row, column=2).value = "Alert rate @Medium+ (%)"
+
+    for i, c in enumerate(classes, start=start_row + 1):
+        label = f"{c['name']} — {c['support']} ({c['share']:.1f}%)"
+        ws.cell(row=i, column=1).value = label
+        ws.cell(row=i, column=2).value = float(c["alert_rate"])
+
+    ar_bar = BarChart()
+    ar_bar.type = "bar"
+    ar_bar.grouping = "clustered"
+    ar_bar.title = "Alert rate @Medium+ by class (Table 3)"
+
+    ar_bar.x_axis.title = "Class"
+    ar_bar.y_axis.title = "Percent (%)"
+
+    ar_data = Reference(ws, min_col=2, min_row=start_row, max_row=start_row + len(classes))
+    ar_cats = Reference(ws, min_col=1, min_row=start_row + 1, max_row=start_row + len(classes))
+
+    ar_bar.add_data(ar_data, titles_from_data=True)
+    ar_bar.set_categories(ar_cats)
+
+    ar_bar.dataLabels = _dl_values(num_fmt="0.0")
+    ar_bar.y_axis.scaling.orientation = "maxMin"
+
+    ar_bar.width = 42
+    ar_bar.height = max(16, 0.7 * len(classes) + 10)
+
+    ws.add_chart(ar_bar, "K22")
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -396,6 +1017,36 @@ def main() -> None:
         default=1,
         help="How many times to repeat the full set of OWASP scenarios (default: 1).",
     )
+    parser.add_argument(
+        "--attack-max",
+        type=int,
+        default=0,
+        help="Maximum number of attack events to send (0 = no cap).",
+    )
+    parser.add_argument(
+        "--benign-log-path",
+        default="",
+        help="Path to access.log file containing benign HTTP traffic.",
+    )
+    parser.add_argument(
+        "--benign-max",
+        type=int,
+        default=5000,
+        help="Maximum number of benign events to send from access.log.",
+    )
+    parser.add_argument(
+        "--benign-multiplier",
+        type=float,
+        default=9.0,
+        help="How many benign events per 1 attack event (~9.0 ≈ 90% benign / 10% attacks).",
+    )
+    parser.add_argument(
+        "--benign-loops",
+        "--benign-loop",
+        type=int,
+        default=1,
+        help="How many times to repeat benign traffic sending (default: 1).",
+    )
 
     args = parser.parse_args()
     csv_out = (args.csv_out or "").strip()
@@ -409,6 +1060,11 @@ def main() -> None:
     pretty = not args.no_pretty and DEFAULT_PRETTY != "0"
     seed = args.seed or ""
     loops = max(1, int(args.loops))
+    attack_max = max(0, int(args.attack_max))
+    benign_loops = max(1, int(args.benign_loops))
+    benign_log_path = (args.benign_log_path or "").strip()
+    benign_max = int(args.benign_max)
+    benign_multiplier = float(args.benign_multiplier)
 
     url_full = base_url.rstrip("/") + path_process
     print(f"Target Orchestrator URL: {url_full}")
@@ -545,128 +1201,151 @@ def main() -> None:
     ]
 
     csv_rows: List[Dict[str, Any]] = []
+    scenarios = [
+        ("sql_injection", "/payments/charge", "POST", SQLI),
+        ("sql_injection", "/api/v1/orders/search", "GET", SQLI),
+        ("sql_injection", "/admin/reports/export", "GET", SQLI),
+        ("nosql_injection", "/api/v1/users/search", "POST", NOSQL),
+        ("nosql_injection", "/api/v2/audit/logs", "POST", NOSQL),
+        ("ldap_injection", "/internal/ldap/search", "POST", LDAP),
+        ("ldap_injection", "/admin/directory/search", "POST", LDAP),
+        ("cmd_injection", "/admin/tools/ping", "POST", CMDI),
+        ("cmd_injection", "/admin/diag/traceroute", "POST", CMDI),
+        ("xss", "/profile/update", "POST", XSS),
+        ("xss", "/comments/post", "POST", XSS),
+        ("ssrf", "/fetch-url", "POST", SSRF),
+        ("ssrf", "/webhook/test", "POST", SSRF),
+        ("ssrf_sensitive", "/metadata/fetch", "POST", SSRF_META),
+        ("ssrf_sensitive", "/cloud/proxy", "POST", SSRF_META),
+        ("api_key_exposure", "/integrations/slack/callback", "POST", API_KEYS),
+        ("api_key_exposure", "/api/v1/keys/rotate", "POST", API_KEYS),
+        ("auth_bruteforce", "/auth/login", "POST", BRUTE),
+        ("auth_bruteforce", "/api/v1/auth/login", "POST", BRUTE),
+        ("credential_stuffing", "/auth/login", "POST", STUFF),
+        ("credential_stuffing", "/api/v1/auth/login", "POST", STUFF),
+        ("idor", "/profile", "GET", IDOR),
+        ("idor", "/admin/users/42", "GET", IDOR),
+        ("misconfiguration", "/", "GET", MISCONF),
+        ("misconfiguration", "/debug/routes", "GET", MISCONF),
+        ("data_exposure", "/files/download", "GET", DATAEXP),
+        ("data_exposure", "/reports/export", "GET", DATAEXP),
+        ("dos", "/api/v1/search", "GET", DOS),
+        ("dos", "/login", "POST", DOS),
+        ("websocket", "/ws/chat", "GET", WS),
+        ("websocket", "/socket.io/", "GET", WS),
+        ("business_logic", "/cart/apply-coupon", "POST", BIZ),
+        ("business_logic", "/payments/refund", "POST", BIZ),
+    ]
 
     with requests.Session() as session:
-        for loop_idx in range(loops):
-            if loops > 1:
-                say(f"=== Loop {loop_idx + 1}/{loops} ===")
+        attack_events = 0
+        cycle_idx = 0
+        while True:
+            if attack_max > 0 and attack_events >= attack_max:
+                break
+            if attack_max <= 0 and cycle_idx >= loops:
+                break
 
-            # A03: SQLi
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "sql_injection", "/payments/charge", "POST", SQLI, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "sql_injection", "/api/v1/orders/search", "GET", SQLI, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "sql_injection", "/admin/reports/export", "GET",
-                      SQLI, seed, csv_rows)
+            cycle_idx += 1
+            if attack_max > 0:
+                say(f"=== Attack cycle {cycle_idx} (sent={attack_events}/{attack_max}) ===")
+            elif loops > 1:
+                say(f"=== Loop {cycle_idx}/{loops} ===")
 
-            # A03: NoSQL
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "nosql_injection", "/api/v1/users/search", "POST", NOSQL, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "nosql_injection", "/api/v2/audit/logs", "POST",
-                      NOSQL, seed, csv_rows)
+            cycle_sent = 0
+            for group_name, endpoint, method, payloads in scenarios:
+                remaining = None
+                if attack_max > 0:
+                    remaining = attack_max - attack_events
+                    if remaining <= 0:
+                        break
+                sent_now = run_group(
+                    session=session,
+                    base_url=base_url,
+                    path_process=path_process,
+                    detailed=detailed,
+                    token=token,
+                    pretty=pretty,
+                    only_group=only_group,
+                    group_name=group_name,
+                    endpoint=endpoint,
+                    method=method,
+                    payloads=payloads,
+                    seed=seed,
+                    csv_rows=csv_rows,
+                    attack_budget=remaining,
+                )
+                attack_events += sent_now
+                cycle_sent += sent_now
+                if attack_max > 0 and attack_events >= attack_max:
+                    break
 
-            # A03: LDAP
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "ldap_injection", "/internal/ldap/search", "POST", LDAP, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "ldap_injection", "/admin/directory/search", "POST",
-                      LDAP, seed, csv_rows)
+            if attack_max > 0 and cycle_sent == 0:
+                say("No attack events were sent in this cycle; stopping early.")
+                break
 
-            # A03: CMD injection
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "cmd_injection", "/admin/tools/ping", "POST", CMDI, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "cmd_injection", "/admin/diag/traceroute", "POST",
-                      CMDI, seed, csv_rows)
+        say(f"Attack events generated: {attack_events}")
 
-            # A03: XSS
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "xss", "/profile/update", "POST", XSS, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "xss", "/comments/post", "POST",
-                      XSS, seed, csv_rows)
+        # If user provided a path to access.log, load benign traffic
+        if benign_log_path:
+            # per-loop target based on attacks count (same ratio logic)
+            target_per_loop = int(attack_events * benign_multiplier)
 
-            # A10: SSRF
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "ssrf", "/fetch-url", "POST", SSRF, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "ssrf", "/webhook/test", "POST",
-                      SSRF, seed, csv_rows)
+            # total target across benign loops (cap by benign_max as "overall cap")
+            total_target_benign = min(target_per_loop * benign_loops, benign_max)
 
-            # A10: Cloud Metadata SSRF
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "ssrf_sensitive", "/metadata/fetch", "POST", SSRF_META, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "ssrf_sensitive", "/cloud/proxy", "POST",
-                      SSRF_META, seed, csv_rows)
+            if total_target_benign <= 0:
+                say("Benign traffic skipped (total_target_benign <= 0).")
+            else:
+                say(
+                    f"Loading up to {total_target_benign} benign events from {benign_log_path} "
+                    f"(multiplier={benign_multiplier}, benign_loops={benign_loops})"
+                )
 
-            # API key / sensitive data exposure
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "api_key_exposure", "/integrations/slack/callback", "POST", API_KEYS, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "api_key_exposure", "/api/v1/keys/rotate", "POST",
-                      API_KEYS, seed, csv_rows)
+                benign_all = load_benign_from_log(
+                    benign_log_path,
+                    max_events=total_target_benign,
+                )
 
-            # Auth bruteforce
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "auth_bruteforce", "/auth/login", "POST", BRUTE, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "auth_bruteforce", "/api/v1/auth/login", "POST",
-                      BRUTE, seed, csv_rows)
+                if not benign_all:
+                    say("No benign events loaded (empty file or parse mismatch).")
+                else:
+                    # distribute events across benign loops
+                    per_loop = [total_target_benign // benign_loops] * benign_loops
+                    for i in range(total_target_benign % benign_loops):
+                        per_loop[i] += 1
 
-            # Credential stuffing
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "credential_stuffing", "/auth/login", "POST", STUFF, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "credential_stuffing", "/api/v1/auth/login", "POST",
-                      STUFF, seed, csv_rows)
+                    def take_events(offset: int, count: int) -> List[Dict[str, Any]]:
+                        # if file shorter than needed, cycle
+                        out = []
+                        n = len(benign_all)
+                        for i in range(count):
+                            out.append(benign_all[(offset + i) % n])
+                        return out
 
-            # Broken access control / IDOR
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "idor", "/profile", "GET", IDOR, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "idor", "/admin/users/42", "GET",
-                      IDOR, seed, csv_rows)
+                    offset = 0
+                    for b_idx in range(benign_loops):
+                        n_send = per_loop[b_idx]
+                        if n_send <= 0:
+                            continue
 
-            # Security Misconfiguration
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "misconfiguration", "/", "GET", MISCONF, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "misconfiguration", "/debug/routes", "GET",
-                      MISCONF, seed, csv_rows)
+                        say(f"Benign loop {b_idx + 1}/{benign_loops}: sending {n_send} benign events...")
+                        benign_events = take_events(offset, n_send)
+                        offset += n_send
 
-            # Data exposure
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "data_exposure", "/files/download", "GET", DATAEXP, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "data_exposure", "/reports/export", "GET",
-                      DATAEXP, seed, csv_rows)
-
-            # DoS
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "dos", "/api/v1/search", "GET", DOS, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "dos", "/login", "POST",
-                      DOS, seed, csv_rows)
-
-            # WebSocket abuse
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "websocket", "/ws/chat", "GET", WS, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "websocket", "/socket.io/", "GET",
-                      WS, seed, csv_rows)
-
-            # Business logic abuse
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "business_logic", "/cart/apply-coupon", "POST", BIZ, seed, csv_rows)
-            run_group(session, base_url, path_process, detailed, token, pretty,
-                      only_group, "business_logic", "/payments/refund", "POST",
-                      BIZ, seed, csv_rows)
+                        run_benign_events(
+                            session=session,
+                            base_url=base_url,
+                            path_process=path_process,
+                            detailed=detailed,
+                            token=token,
+                            pretty=pretty,
+                            benign_events=benign_events,
+                            csv_rows=csv_rows,
+                        )
 
     total_events = len(csv_rows) if csv_rows is not None else 0
-
+    
     # ---- build overall list of columns ----
     fieldnames_set = {k for row in csv_rows for k in row.keys()}
 
@@ -680,6 +1359,8 @@ def main() -> None:
         "source_ip",
         "user_id",
         "hash_id",
+        "gt_label",
+        "pred_risk",
         "risk_level",
         "final_score",
         "final_threshold",
@@ -711,6 +1392,31 @@ def main() -> None:
     extra = sorted(fieldnames_set - set(ordered))
     fieldnames = ordered + extra
 
+    group_order = [
+        "sql_injection","nosql_injection","ldap_injection","cmd_injection","xss","ssrf","ssrf_sensitive",
+        "api_key_exposure","auth_bruteforce","credential_stuffing","idor","misconfiguration","data_exposure",
+        "dos","websocket","business_logic","benign",
+    ]
+    group_labels = {
+        "sql_injection": "SQL Injection",
+        "nosql_injection": "NoSQL Injection",
+        "ldap_injection": "LDAP Injection",
+        "cmd_injection": "Command Injection",
+        "xss": "Cross-Site Scripting",
+        "ssrf": "SSRF",
+        "ssrf_sensitive": "SSRF (metadata services)",
+        "api_key_exposure": "API key exposure",
+        "auth_bruteforce": "Authentication bruteforce",
+        "credential_stuffing": "Credential stuffing",
+        "idor": "IDOR",
+        "misconfiguration": "Misconfiguration",
+        "data_exposure": "Data exposure",
+        "dos": "DoS",
+        "websocket": "WebSocket abuse",
+        "business_logic": "Business logic abuse",
+        "benign": "Benign",
+    }
+
     # ---- CSV export (if requested) ----
     if csv_out:
         with open(csv_out, "w", newline="", encoding="utf-8") as f:
@@ -726,132 +1432,61 @@ def main() -> None:
         ws = wb.active
         ws.title = "owasp_runs"
 
-        # header
         ws.append(fieldnames)
-        # rows
         for row in csv_rows:
             ws.append([row.get(col) for col in fieldnames])
 
-        # auto-fit column widths
+        # faster auto-fit: sample only first N rows
+        sample = csv_rows[:300]
         for idx, col in enumerate(fieldnames, start=1):
             col_letter = get_column_letter(idx)
-            # all values in the column + header
-            vals = [str(row.get(col, "")) for row in csv_rows]
+            vals = [str(r.get(col, "")) for r in sample]
             max_len = max([len(col)] + [len(v) for v in vals]) if vals else len(col)
 
             if col in ("payload", "response_raw", "human_text"):
-                width = min(max_len + 2, 120)  # very long text fields
+                width = min(max_len + 2, 120)
             else:
-                width = min(max_len + 2, 60)   # typical technical fields
-
+                width = min(max_len + 2, 60)
             ws.column_dimensions[col_letter].width = width
 
-        # ---- summary sheet: detection quality by attack group ----
-        stats = {}
-        good_levels = {"medium", "high", "critical"}
+        # ---- Table 2: Mixed-traffic confusion matrix + metrics (A/B) ----
+        t2_hdr, t2_rows = build_table2_mixed_traffic(csv_rows)
+        add_table_sheet(
+            wb,
+            sheet_name="table2_mixed_traffic",
+            headers=t2_hdr,
+            rows=t2_rows,
+            percent_cols={10, 11, 12, 13},
+        )
 
-        for row in csv_rows:
-            g = row.get("attack_group") or row.get("topic") or row.get("attack_type_identified")
-            if not g:
-                continue
-            risk = str(row.get("risk_level") or "").lower()
-            topic = row.get("topic")
-
-            if g not in stats:
-                stats[g] = {"total": 0, "good": 0, "topics": Counter()}
-
-            stats[g]["total"] += 1
-            if risk in good_levels:
-                stats[g]["good"] += 1
-            if topic:
-                stats[g]["topics"][topic] += 1
-
-        # mapping from internal group id to human-readable label and notes
-        group_order = [
-            "sql_injection",
-            "nosql_injection",
-            "ldap_injection",
-            "cmd_injection",
-            "xss",
-            "ssrf",
-            "ssrf_sensitive",
-            "api_key_exposure",
-            "auth_bruteforce",
-            "credential_stuffing",
-            "idor",
-            "misconfiguration",
-            "data_exposure",
-            "dos",
-            "websocket",
-            "business_logic",
-        ]
-        group_labels = {
-            "sql_injection": "SQL Injection",
-            "nosql_injection": "NoSQL Injection",
-            "ldap_injection": "LDAP Injection",
-            "cmd_injection": "Command Injection",
-            "xss": "Cross-Site Scripting",
-            "ssrf": "SSRF",
-            "ssrf_sensitive": "SSRF (metadata services)",
-            "api_key_exposure": "API key exposure",
-            "auth_bruteforce": "Authentication bruteforce",
-            "credential_stuffing": "Credential stuffing",
-            "idor": "IDOR",
-            "misconfiguration": "Misconfiguration",
-            "data_exposure": "Data exposure",
-            "dos": "DoS",
-            "websocket": "WebSocket abuse",
-            "business_logic": "Business logic abuse",
-        }
-        group_notes = {
-            "ssrf_sensitive": "elevated impact due to policy",
-            "websocket": "often high/critical",
-            "business_logic": "often high/critical",
-        }
-
-        ws_sum = wb.create_sheet(title="summary")
-        header_sum = [
-            "Attack group",
-            "#events",
-            "% with risk_level \u2265 medium",
-            "Topic identified (majority)",
-            "Notes",
-        ]
-        ws_sum.append(header_sum)
-
-        for g in group_order:
-            data = stats.get(g, {"total": 0, "good": 0, "topics": Counter()})
-            total = data["total"]
-            good = data["good"]
-            if total > 0:
-                pct = round((good / total) * 100.0, 1)
-            else:
-                pct = 0.0
-            if data["topics"]:
-                topic_major, _ = data["topics"].most_common(1)[0]
-            else:
-                topic_major = ""
-
-            ws_sum.append([
-                group_labels.get(g, g),
-                total,
-                pct,
-                topic_major,
-                group_notes.get(g, ""),
-            ])
-
-        # auto-fit column widths on summary sheet
-        for idx, col in enumerate(header_sum, start=1):
-            col_letter = get_column_letter(idx)
-            vals = [str(ws_sum.cell(row=r, column=idx).value or "") for r in range(1, ws_sum.max_row + 1)]
-            max_len = max(len(col), *(len(v) for v in vals)) if vals else len(col)
-            ws_sum.column_dimensions[col_letter].width = min(max_len + 2, 60)
+        # ---- Table 3: Risk-level stratification by GT class ----
+        t3_hdr, t3_rows = build_table3_risk_stratification(csv_rows, group_order, group_labels)
+        add_table_sheet(
+            wb,
+            sheet_name="table3_risk_stratification",
+            headers=t3_hdr,
+            rows=t3_rows,
+            percent_cols={8},
+        )
+        add_charts_from_table2(wb)
+        add_charts_from_table3(wb, include_benign=False)
 
         wb.save(xlsx_out)
         print(f"XLSX written to: {xlsx_out}")
 
     t_end = time.perf_counter()
     elapsed = t_end - t_start
+
+    # ---- console summary: mixed-traffic confusion/metrics ----
+    t2_hdr, t2_rows = build_table2_mixed_traffic(csv_rows)
+    if t2_rows:
+        print("\nTable 2 (mixed traffic):")
+        for r in t2_rows:
+            print(
+                f"- {r[0]} | N={r[2]} attack={r[3]} benign={r[4]} "
+                f"TP={r[5]} FP={r[6]} FN={r[7]} TN={r[8]} "
+                f"Precision={r[9]:.2f}% Recall={r[10]:.2f}% F1={r[11]:.2f}% FPR={r[12]:.3f}%"
+            )
 
     if total_events > 0:
         events_per_sec = total_events / elapsed

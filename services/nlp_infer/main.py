@@ -9,6 +9,7 @@ import uvicorn
 import urllib.parse, html
 import time
 import asyncio
+import numpy as np
 
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
@@ -25,6 +26,12 @@ logging.basicConfig(
 log = logging.getLogger("nlp-inference")
 
 NLP_THRESHOLD_RAW = os.getenv("NLP_THRESHOLD", "").strip()
+NLP_LOAD_PER_ATTACK_MODELS = os.getenv("NLP_LOAD_PER_ATTACK_MODELS", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 PATH_TFIDF = os.getenv("NLP_TFIDF_LR_PATH", "/models/nlp/nlp_tfidf_lr.joblib")
 PATH_CHAR  = os.getenv("NLP_CHAR_SGD_PATH", "/models/nlp/nlp_char_sgd.joblib")
@@ -150,6 +157,8 @@ def _load_rules():
             compiled = {"strong": [], "tokens": []}
             compiled["min_hits"] = int(group.get("min_hits", 1))
             compiled["divisor"]  = float(group.get("partial_norm_divisor", 3))
+            compiled["match_fields"] = list(group.get("match_fields", [])) or []
+            compiled["requires_rule_hit"] = bool(group.get("requires_rule_hit", False))
             
             for rx in group.get("strong", []) or []:
                 try:
@@ -396,13 +405,13 @@ def detect_attack_signals(tf: Dict[str, Any], blob: str) -> Tuple[Dict[str, floa
     signals: Dict[str, float] = {}
     if not isinstance(blob, str):
         blob = str(blob or "")
-    lb = blob.lower()
+    full_lb = blob.lower()
 
     if not COMPILED_RULES:
         fallback_signals = {}
         kw_hits = 0
         for tok in ("select","union","onerror=","document.cookie"):
-            if tok in lb:
+            if tok in full_lb:
                 kw_hits += 1
         base = min(1.0, kw_hits / 3.0)
         return {}, base
@@ -410,11 +419,25 @@ def detect_attack_signals(tf: Dict[str, Any], blob: str) -> Tuple[Dict[str, floa
     strong_any = 0.0
     partial_any = 0.0
     kw_total = 0
-    payload_len = float(min(len(lb), 30000))
+    payload_len = float(min(len(full_lb), 30000))
 
     for atk, spec in COMPILED_RULES.items():
         s_strong = 0.0
         s_partial = 0.0
+
+        # choose which fields to match on
+        fields = spec.get("match_fields") or []
+        if fields and isinstance(tf, dict):
+            parts = []
+            for name in fields:
+                v = tf.get(name)
+                if v:
+                    parts.append(str(v).lower())
+            lb = " ".join(parts) if parts else full_lb
+        else:
+            lb = full_lb
+
+        requires_hit = bool(spec.get("requires_rule_hit"))
 
         tokens = spec.get("tokens", []) or []
         if tokens:
@@ -425,6 +448,7 @@ def detect_attack_signals(tf: Dict[str, Any], blob: str) -> Tuple[Dict[str, floa
                 s_partial = min(1.0, cnt / max(1.0, divisor))
             else:
                 s_partial = 0.0
+                
         for patt in spec.get("strong", []):
             try:
                 if isinstance(patt, dict) and patt.get("unsafe_pattern"):
@@ -457,6 +481,10 @@ def detect_attack_signals(tf: Dict[str, Any], blob: str) -> Tuple[Dict[str, floa
                 log.exception("regex_search_failed attack=%s", atk)
                 continue
 
+        # if this attack requires a strong regex hit, ignore pure partial matches
+        if requires_hit and s_strong <= 0.0:
+            s_partial = 0.0
+
         signals[f"{atk}_strong"] = float(s_strong)
         signals[f"{atk}_partial"] = float(s_partial)
         try:
@@ -475,24 +503,24 @@ def detect_attack_signals(tf: Dict[str, Any], blob: str) -> Tuple[Dict[str, floa
     misconf_tokens = [t.lower() for t in misc.get("misconf_tokens", [])]
     dos_tokens = [t.lower() for t in misc.get("dos_tokens", [])]
 
-    cred_hits = _count_contains(lb, auth_tokens) if auth_tokens else 0
+    cred_hits = _count_contains(full_lb, auth_tokens) if auth_tokens else 0
     denom_auth = max(1, len(auth_tokens) // 2) if auth_tokens else 1
     signals["auth_bruteforce_hint"] = float(min(1.0, cred_hits / denom_auth))
 
-    signals["credential_stuffing_hint"] = 1.0 if ("password" in lb and ("'" in lb or '"' in lb) and "admin" in lb) else 0.0
+    signals["credential_stuffing_hint"] = 1.0 if ("password" in full_lb and ("'" in full_lb or '"' in full_lb) and "admin" in full_lb) else 0.0
 
-    misconf_hits = _count_contains(lb, misconf_tokens) if misconf_tokens else 0
+    misconf_hits = _count_contains(full_lb, misconf_tokens) if misconf_tokens else 0
     denom_misconf = max(1, len(misconf_tokens) // 2) if misconf_tokens else 1
     signals["misconfig_hint"] = float(min(1.0, misconf_hits / denom_misconf))
 
-    dos_hits = _count_contains(lb, dos_tokens) if dos_tokens else 0
+    dos_hits = _count_contains(full_lb, dos_tokens) if dos_tokens else 0
     denom_dos = max(1, len(dos_tokens) // 2) if dos_tokens else 1
     signals["dos_hint_text"] = float(min(1.0, dos_hits / denom_dos))
 
     # aggregations
     signals["keyword_hits"] = float(kw_total)
-    signals["payload_len"] = float(len(lb))
-    signals["regex_skipped_due_to_len"] = float(1.0 if len(lb) > _RE_MAX_REGEX_INPUT_LEN else 0.0)
+    signals["payload_len"] = float(len(full_lb))
+    signals["regex_skipped_due_to_len"] = float(1.0 if len(full_lb) > _RE_MAX_REGEX_INPUT_LEN else 0.0)
 
     signals["any_strong"] = float(strong_any)
     signals["any_partial"] = float(partial_any)
@@ -506,6 +534,9 @@ def detect_attack_signals(tf: Dict[str, Any], blob: str) -> Tuple[Dict[str, floa
 
     if (signals.get("api_key_exposed_hint", 0.0) or signals.get("api_key_strong", 0.0)) and partial_any > 0.0:
         base = min(1.0, base + 0.1)
+
+    if strong_any <= 0.0 and partial_any < 0.5:
+        base = min(base, 0.2)
 
     return signals, float(base)
 
@@ -696,7 +727,10 @@ async def lifespan(app: FastAPI):
             log.exception("nlp_model_load_failed kind=%s", name)
     _load_any_models()
     _load_rules()
-    _load_per_attack_models()
+    if NLP_LOAD_PER_ATTACK_MODELS:
+        _load_per_attack_models()
+    else:
+        log.info("per_attack_models_disabled_by_env")
     yield
 
 app = FastAPI(title="nlp-inference", version="1.2.0", lifespan=lifespan)
@@ -718,6 +752,11 @@ def ready():
         "loaded": LOADED,
         "threshold": thr_eff,
         "threshold_meta": _load_recommended_threshold(),
+        "per_attack_enabled": NLP_LOAD_PER_ATTACK_MODELS,
+        "per_attack_loaded": {
+            "tfidf_lr": len(PER_ATTACK_MODELS.get("tfidf_lr", {})),
+            "char_sgd": len(PER_ATTACK_MODELS.get("char_sgd", {})),
+        },
     }
 
 @app.get("/metrics")
@@ -761,7 +800,10 @@ def nlp_models():
 
 
 @app.post("/score")
-def score(body: Dict[str,Any], x_trace_id: Optional[str] = Header(default=None, convert_underscores=False)):
+def score(
+    body: Dict[str, Any],
+    x_trace_id: Optional[str] = Header(default=None, convert_underscores=False),
+):
     trace = x_trace_id or "-"
     _try_reload_rules()
     with NLP_SCORE_LAT.time():
@@ -771,33 +813,52 @@ def score(body: Dict[str,Any], x_trace_id: Optional[str] = Header(default=None, 
             log_kind = (tf.get("log_kind") or "").lower()
 
             # auto-switching models
-            use_tfidf = LOADED.get("tfidf_lr", False) and (log_kind in ("access_log","cloudtrail") or len(payload) >= 10)
-            use_char  = LOADED.get("char_sgd", False) and (suspicious_char_ratio(payload) > 0.15 or len(payload) > 200)
+            use_tfidf = LOADED.get("tfidf_lr", False) and (
+                log_kind in ("access_log", "cloudtrail") or len(payload) >= 10
+            )
+            use_char = LOADED.get("char_sgd", False) and (
+                suspicious_char_ratio(payload) > 0.15 or len(payload) > 200
+            )
 
-            per = []
+            per: List[Dict[str, Any]] = []
 
             # rules scoring
             with NLP_MODEL_LAT.labels("rules").time():
                 base, sig = rules_scoring(tf)
-            per.append({"kind":"rules","score":base, "signals": sig})
+            per.append({"kind": "rules", "score": base, "signals": sig})
+
+            # TFIDF (any)
             if use_tfidf:
                 try:
                     with NLP_MODEL_LAT.labels("tfidf_lr").time():
-                      vec = MODELS["tfidf_lr"]["vectorizer"]
-                      X = vec.transform([payload])
-                      proba = float(MODELS["tfidf_lr"]["clf"].predict_proba(X)[0,1])
-                    per.append({"kind":"tfidf_lr","score":proba})
+                        m = MODELS.get("tfidf_lr")
+                        if m:
+                            if "pipeline" in m:
+                                proba = float(m["pipeline"].predict_proba([payload])[0, 1])
+                            else:
+                                vec = m["vectorizer"]
+                                clf = m["clf"]
+                                X = vec.transform([payload])
+                                proba = float(clf.predict_proba(X)[0, 1])
+                            per.append({"kind": "tfidf_lr", "score": proba})
                 except Exception:
                     NLP_MODEL_ERRS.labels("tfidf_lr").inc()
                     log.exception("tfidf_lr_infer_failed")
 
+            # CHAR (any)
             if use_char:
                 try:
                     with NLP_MODEL_LAT.labels("char_sgd").time():
-                      vec = MODELS["char_sgd"]["vectorizer"]
-                      Xc = vec.transform([payload])
-                      proba = float(MODELS["char_sgd"]["clf"].predict_proba(Xc)[0, 1])
-                    per.append({"kind":"char_sgd","score":proba})
+                        m = MODELS.get("char_sgd")
+                        if m:
+                            if "pipeline" in m:
+                                proba = float(m["pipeline"].predict_proba([payload])[0, 1])
+                            else:
+                                vec = m["vectorizer"]
+                                clf = m["clf"]
+                                Xc = vec.transform([payload])
+                                proba = float(clf.predict_proba(Xc)[0, 1])
+                            per.append({"kind": "char_sgd", "score": proba})
                 except Exception:
                     NLP_MODEL_ERRS.labels("char_sgd").inc()
                     log.exception("char_sgd_infer_failed")
@@ -807,36 +868,11 @@ def score(body: Dict[str,Any], x_trace_id: Optional[str] = Header(default=None, 
                 per.extend(pa_entries)
 
             topics = topics_pa if topics_pa else extract_topics(sig, min_score=0.5, top_k=5)
-            try:
-                m = MODELS.get("tfidf_lr")
-                if m:
-                    if "pipeline" in m:
-                        proba = float(m["pipeline"].predict_proba([payload])[0, 1])
-                    else:
-                        vec = m["vectorizer"]; clf = m["clf"]
-                        X = vec.transform([payload])
-                        proba = float(clf.predict_proba(X)[0, 1])
-                    per.append({"kind": "tfidf_lr", "score": proba})
-            except Exception:
-                NLP_MODEL_ERRS.labels("tfidf_lr").inc()
-                log.exception("tfidf_lr_infer_failed")
 
-            try:
-                m = MODELS.get("char_sgd")
-                if m:
-                    if "pipeline" in m:
-                        proba = float(m["pipeline"].predict_proba([payload])[0, 1])
-                    else:
-                        vec = m["vectorizer"]; clf = m["clf"]
-                        Xc = vec.transform([payload])
-                        proba = float(clf.predict_proba(Xc)[0, 1])
-                    per.append({"kind": "char_sgd", "score": proba})
-            except Exception:
-                NLP_MODEL_ERRS.labels("char_sgd").inc()
-                log.exception("char_sgd_infer_failed")
-            nlp_score = max(p["score"] for p in per) if per else 0.0
+            nlp_score = max((p["score"] for p in per), default=0.0)
             thr_eff = _effective_threshold()
             per_cut = _summarize_per_models(per, min_score=SUMMARY_MIN)
+
             resp = {
                 "hash_id": body.get("hash_id"),
                 "per_model": per_cut,
@@ -846,20 +882,27 @@ def score(body: Dict[str,Any], x_trace_id: Optional[str] = Header(default=None, 
                 "topics": topics,
             }
             NLP_SCORE_REQS.labels("ok").inc()
-            log.info('nlp_result trace_id="%s" hash="%s" score=%.4f', trace, resp["hash_id"], nlp_score)
+            log.info(
+                'nlp_result trace_id="%s" hash="%s" score=%.4f',
+                trace,
+                resp["hash_id"],
+                nlp_score,
+            )
             return JSONResponse(resp)
 
         except Exception as e:
             NLP_SCORE_REQS.labels("error").inc()
-            log.exception(f'nlp_score_failed trace_id="{trace}" err="{e}"')
-            return JSONResponse({
-                "hash_id": body.get("hash_id"),
-                "per_model": [{"kind": "rules", "score": 0.0}],
-                "nlp_score": 0.0,
-                "threshold": _effective_threshold(),
-                "threshold_hit": False,
-                "meta": {"error": "exception_fallback"},
-            })
+            log.exception('nlp_score_failed trace_id="%s" err="%s"', trace, e)
+            return JSONResponse(
+                {
+                    "hash_id": body.get("hash_id"),
+                    "per_model": [{"kind": "rules", "score": 0.0}],
+                    "nlp_score": 0.0,
+                    "threshold": _effective_threshold(),
+                    "threshold_hit": False,
+                    "meta": {"error": "exception_fallback"},
+                }
+            )
 
 @app.post("/score_batch")
 async def score_batch(

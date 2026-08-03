@@ -5,6 +5,9 @@ import uvicorn
 import time
 import json
 import asyncio
+import math
+import string
+import collections
 
 from pathlib import Path
 from datetime import datetime, timezone
@@ -17,6 +20,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from collections import deque, defaultdict
+from urllib.parse import urlparse, parse_qs
 
 from common.utils import (
   getenv_str,
@@ -387,15 +391,87 @@ def _normalize_headers(h) -> tuple[str, float]:
 def _count_contains_pp(blob: str, pats):
     return sum(1 for p in pats if p in blob)
 
+def _char_entropy_pp(s: str) -> float:
+    if not s:
+        return 0.0
+    cnt = collections.Counter(s)
+    n = len(s)
+    return float(-sum((c / n) * math.log2(c / n) for c in cnt.values()))
+
+def _suspicious_char_ratio_pp(s: str) -> float:
+    if not s:
+        return 0.0
+    sus = sum(ch in "<>\"'`;$(){}[]\\|&" for ch in s)
+    return float(sus / max(1, len(s)))
+
+def _digit_ratio_pp(s: str) -> float:
+    if not s:
+        return 0.0
+    digs = sum(ch.isdigit() for ch in s)
+    return float(digs / max(1, len(s)))
+
+def _punct_ratio_pp(s: str) -> float:
+    if not s:
+        return 0.0
+    p = sum(ch in string.punctuation for ch in s)
+    return float(p / max(1, len(s)))
+
+
+def _upper_ratio_pp(s: str) -> float:
+    if not s:
+        return 0.0
+    ups = sum(ch.isupper() for ch in s)
+    return float(ups / max(1, len(s)))
+
+
+def _pct_encoded_ratio_pp(s: str) -> float:
+    if not s:
+        return 0.0
+    n = len(s)
+    i = 0
+    pct_units = 0
+    while i + 2 < n:
+        ch = s[i]
+        if ch == "%":
+            a = s[i + 1]
+            b = s[i + 2]
+            if (
+                ("0" <= a <= "9" or "a" <= a.lower() <= "f")
+                and ("0" <= b <= "9" or "a" <= b.lower() <= "f")
+            ):
+                pct_units += 1
+                i += 3
+                continue
+        i += 1
+    pct_units += s.count("+")
+    return float(pct_units / max(1, n))
+
+def _token_count_pp(s: str) -> int:
+    return int(len(s.split())) if s else 0
+
+def _featurize_for_ml_from_text_pp(text: str) -> dict:
+    t = _normalize_text_pp(text)
+    return {
+        "text_len": len(t),
+        "char_entropy": _char_entropy_pp(t),
+        "suspicious_char_ratio": _suspicious_char_ratio_pp(t),
+        "digit_ratio": _digit_ratio_pp(t),
+        "punct_ratio": _punct_ratio_pp(t),
+        "token_count": _token_count_pp(t),
+    }
+
 def rule_features_for_ml(text_fields: dict) -> dict:
     payload = (text_fields.get("payload") or "")
     headers = (text_fields.get("headers") or "")
     endpoint= (text_fields.get("endpoint") or "")
     error   = (text_fields.get("error_text") or "")
     method  = (text_fields.get("method") or "")
-    lb = _normalize_text_pp(" ".join([payload, headers, endpoint, error, method])[:20000])
 
-    feats = {}
+    raw_blob = " ".join([payload, headers, endpoint, error, method])[:20000]
+    lb = _normalize_text_pp(raw_blob)
+
+    feats = _featurize_for_ml_from_text_pp(lb)
+
     strong_any = 0.0
     partial_any = 0.0
     for atk, spec in COMPILED_RULES_PP.items():
@@ -410,13 +486,16 @@ def rule_features_for_ml(text_fields: dict) -> dict:
                 if len(lb) <= _RE_MAX_REGEX_INPUT_LEN:
                     try:
                         if re.compile(patt["unsafe_pattern"]).search(lb):
-                            s_strong = 1.0; break
+                            s_strong = 1.0
+                            break
                     except Exception:
                         pass
                 continue
             if len(lb) <= _RE_MAX_REGEX_INPUT_LEN:
                 if patt.search(lb):
-                    s_strong = 1.0; break
+                    s_strong = 1.0
+                    break
+
         feats[f"rule_{atk}_strong"]  = float(s_strong)
         feats[f"rule_{atk}_partial"] = float(s_partial)
         strong_any  = max(strong_any, s_strong)
@@ -565,10 +644,13 @@ async def featurize(
             source_ip = str(event.get("source_ip") or "")
             error_text = str(event.get("error_text") or event.get("error") or event.get("message") or event.get("msg") or event.get("detail") or "")
 
-            det_method, det_acc = detect_http_method(method, headers if isinstance(headers, dict) else None, endpoint)
+            det_method, det_acc = detect_http_method(
+                method,
+                headers if isinstance(headers, dict) else None,
+                endpoint,
+            )
             method_code = float(METHOD_CODE_MAP.get(det_method, 0))
-            req_rate_60s = _rate_bump_get(_rate_key(endpoint, det_method, source_ip, user_id), time.time())
-            
+
             headers_str, header_count = _normalize_headers(headers)
             headers_bytes = len(headers_str.encode("utf-8"))
             if headers_bytes > MAX_HEADERS_BYTES:
@@ -597,42 +679,70 @@ async def featurize(
                 payload=payload_text[:2048],
                 ts=ts_slim,
             ))         
-            qp_count   = float(query_param_count(endpoint))
-            p_depth    = float(path_depth(endpoint))
-            susp_ratio = float(suspicious_ratio(payload_text))
-            is_json    = 1.0 if is_json_like(payload) else 0.0
-            ip_priv    = 1.0 if is_private_ip(source_ip) else 0.0
+            parsed = urlparse(endpoint or "/")
+            path = parsed.path or "/"
 
+            # 1) endpoint_len & path_depth – як у CSIC
+            endpoint_path = path
+            endpoint_len_val = float(len(endpoint_path))
+            p_depth = float(sum(1 for seg in endpoint_path.split("/") if seg))
+
+            # 2) query-derived features – кількість/довжина/ентропія query частини
+            query_str = parsed.query or ""
+            query_map = parse_qs(query_str, keep_blank_values=True)
+            qp_count = float(len(query_map))
+            query_values = [str(v or "") for vals in query_map.values() for v in vals]
+            query_value_lengths = [len(v) for v in query_values]
+            query_values_n = len(query_values)
+            query_empty_n = sum(1 for v in query_values if not v)
+
+            # 3) suspicious_char_ratio – ближче до CSIC: URL + payload + headers
+            combined_for_susp = " ".join([endpoint or "", payload_text or "", headers_str or ""])
+            susp_ratio = float(suspicious_ratio(combined_for_susp))
+
+            # 4) is_json_payload – по Content-Type header, як у CSIC
+            ct_val = ""
+            if isinstance(headers, dict):
+                for k, v in headers.items():
+                    if str(k).lower() == "content-type":
+                        ct_val = str(v)
+                        break
+            is_json = 1.0 if ("json" in ct_val.lower()) else 0.0
+            ip_priv    = 1.0 if is_private_ip(source_ip) else 0.0
+            path_entropy_val = float(shannon_entropy(endpoint_path))
+            path_digit_ratio_val = float(_digit_ratio_pp(endpoint_path))
+            path_upper_ratio_val = float(_upper_ratio_pp(endpoint_path))
+
+            body_len_val = float(len(payload_text))
+            body_entropy_val = float(shannon_entropy(payload_text[:MAX_TEXT_BYTES]))
+            body_digit_ratio_val = float(_digit_ratio_pp(payload_text))
+            body_punct_ratio_val = float(_punct_ratio_pp(payload_text))
+            pct_encoded_ratio_val = float(_pct_encoded_ratio_pp(" ".join([endpoint or "", payload_text or ""])))
+
+            header_value_lengths = []
+            if isinstance(headers, dict):
+                header_value_lengths = [len(str(v or "")) for v in headers.values()]
+            elif isinstance(headers, list):
+                for item in headers:
+                    if isinstance(item, (tuple, list)) and len(item) == 2:
+                        header_value_lengths.append(len(str(item[1] or "")))
+                    else:
+                        header_value_lengths.append(len(str(item or "")))
+            elif headers_str:
+                header_value_lengths = [len(headers_str)]
+
+            # one-hot методи
             method_onehot = {
-                "method_GET":  1.0 if method == "GET"  else 0.0,
-                "method_POST": 1.0 if method == "POST" else 0.0,
-                "method_PUT":  1.0 if method == "PUT"  else 0.0,
-                "method_DEL":  1.0 if method in ("DELETE", "DEL") else 0.0,
+                "method_GET":  1.0 if det_method == "GET"  else 0.0,
+                "method_POST": 1.0 if det_method == "POST" else 0.0,
+                "method_PUT":  1.0 if det_method == "PUT"  else 0.0,
+                "method_DEL":  1.0 if det_method in ("DELETE", "DEL") else 0.0,
                 "method_Other":0.0,
             }
             if sum(method_onehot.values()) == 0.0:
                 method_onehot["method_Other"] = 1.0
 
-            rate_key = _rate_key(endpoint or "-", method or "-", source_ip or "-", user_id or "-")
-            req_rate_rps = _rate_bump_get(rate_key, time.time())
-            
-            numeric_feats = {
-                "endpoint_len": float(len(endpoint)),
-                "header_count": float(header_count),
-                "payload_size": float(payload_bytes),
-                "latency_ms":   float(latency) if isinstance(latency, (int, float)) else 0.0,
-                "headers_entropy": float(shannon_entropy(headers_str[:MAX_TEXT_BYTES])),
-                **method_onehot,
-                "query_param_count": qp_count,
-                "path_depth": p_depth,
-                "suspicious_char_ratio": susp_ratio,
-                "is_json_payload": is_json,
-                "ip_private": ip_priv,
-                "http_method_code": method_code,
-                "http_method_accuracy": float(det_acc),
-                "req_rate_60s": req_rate_rps,
-            }
-
+            # text_fields, щоб rule_features_for_ml бачило все
             text_fields = {
                 "endpoint":   endpoint,
                 "method":     method,
@@ -645,23 +755,57 @@ async def featurize(
             }
             text_fields = {k: ("" if v is None else str(v)) for k, v in text_fields.items()}
 
-            try:
-                numeric_feats.update(rule_features_for_ml(text_fields))
-            except Exception:
-                log.exception("rule_features_for_ml_failed")
+            # правило-базовані фічі
+            rule_feats = rule_features_for_ml(text_fields)
 
+            # rate-ключ і rps (один раз, використовуємо і в blast, і в numeric_feats)
+            rate_key = _rate_key(endpoint or "-", det_method or "-", source_ip or "-", user_id or "-")
+            req_rate_60s = _rate_bump_get(rate_key, time.time())
+
+            # базові numeric фічі
+            numeric_feats = {
+                "endpoint_len": endpoint_len_val,
+                "header_count": float(header_count),
+                "payload_size": float(payload_bytes),
+                "headers_entropy": float(shannon_entropy(headers_str[:MAX_TEXT_BYTES])),
+                "query_param_count": qp_count,
+                "path_depth": p_depth,
+                "suspicious_char_ratio": susp_ratio,
+                "is_json_payload": is_json,
+                "query_len": float(len(query_str)),
+                "query_entropy": float(shannon_entropy(query_str)),
+                "query_value_len_mean": float(sum(query_value_lengths) / query_values_n) if query_values_n else 0.0,
+                "query_value_len_max": float(max(query_value_lengths)) if query_value_lengths else 0.0,
+                "empty_query_value_ratio": float(query_empty_n / query_values_n) if query_values_n else 0.0,
+                "path_entropy": path_entropy_val,
+                "path_digit_ratio": path_digit_ratio_val,
+                "path_upper_ratio": path_upper_ratio_val,
+                "body_len": body_len_val,
+                "body_entropy": body_entropy_val,
+                "body_digit_ratio": body_digit_ratio_val,
+                "body_punct_ratio": body_punct_ratio_val,
+                "pct_encoded_ratio": pct_encoded_ratio_val,
+                "header_value_total_len": float(sum(header_value_lengths)),
+                "header_value_max_len": float(max(header_value_lengths)) if header_value_lengths else 0.0,
+                "http_method_code": method_code,
+                "latency_ms": float(latency or 0.0),
+                "ip_private": float(ip_priv),
+                "req_rate_60s": float(req_rate_60s),
+            }
+
+            # додаємо метод one-hot + rule-фічі
+            numeric_feats.update(method_onehot)
+            numeric_feats.update(rule_feats)
+            
             headers_dict = headers if isinstance(headers, dict) else None
-
-            rate_key = _rate_key(endpoint or "-", method or "-", source_ip or "-", user_id or "-")
-            req_rate_rps = _rate_bump_get(rate_key, time.time())
 
             env_tag      = os.getenv("PREPROC_ENV", "dev")
             endpoint_cls = _endpoint_class(endpoint or "")
             data_cls     = _data_class(text_fields)
-            auth_state   = _auth_state(headers if isinstance(headers, dict) else None, user_id)
+            auth_state   = _auth_state(headers_dict, user_id)
             exposure     = _exposure(source_ip or "")
             
-            blast = _blast(env_tag, endpoint or "", endpoint_cls, req_rate_rps, headers_dict, user_id)
+            blast = _blast(env_tag, endpoint or "", endpoint_cls, req_rate_60s, headers_dict, user_id)
 
             risk_ctx = {
                 "env": env_tag,

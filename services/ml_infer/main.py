@@ -22,13 +22,23 @@ MODEL_PATH_IF      = os.getenv("MODEL_PATH_IF",      os.getenv("MODEL_PATH", "/m
 MODEL_PATH_OCSVM   = os.getenv("MODEL_PATH_OCSVM",   "/models/ml/ocsvm_model.joblib")
 MODEL_PATH_AE      = os.getenv("MODEL_PATH_AE",      "/models/ml/ae_model.joblib")
 MODEL_PATH_LSTM_AE = os.getenv("MODEL_PATH_LSTM_AE", "/models/ml/lstm_ae_model.joblib")
+MODEL_PATH_SUP_LR  = os.getenv("MODEL_PATH_SUP_LR",  "/models/ml/sup_lr_model.joblib")
+MODEL_PATH_SUP_HGB = os.getenv("MODEL_PATH_SUP_HGB", "/models/ml/sup_hgb_model.joblib")
+MODEL_PATH_SUP_RF  = os.getenv("MODEL_PATH_SUP_RF",  "/models/ml/sup_rf_model.joblib")
+MODEL_PATH_SUP_ET  = os.getenv("MODEL_PATH_SUP_ET",  "/models/ml/sup_et_model.joblib")
 
 MODEL_REGISTRY = {
     "if":       MODEL_PATH_IF,
     "ocsvm":    MODEL_PATH_OCSVM,
     "ae":       MODEL_PATH_AE,
     "lstm_ae":  MODEL_PATH_LSTM_AE,
+    "sup_lr":   MODEL_PATH_SUP_LR,
+    "sup_hgb":  MODEL_PATH_SUP_HGB,
+    "sup_rf":   MODEL_PATH_SUP_RF,
+    "sup_et":   MODEL_PATH_SUP_ET,
 }
+SUPERVISED_NUMERIC_KINDS = {"sup_lr", "sup_hgb", "sup_rf", "sup_et"}
+NOVELTY_MODEL_KINDS = {"if", "ocsvm", "ae", "lstm_ae"}
 
 # Impact policy
 IMPACT_POLICY_PATH = Path(os.getenv("IMPACT_POLICY_PATH", "/app/policies/impact_policy.json"))
@@ -70,13 +80,21 @@ ML_RULES: Optional[dict] = None
 ML_RULES_META: dict = {}
 ML_RULES_FEATS: List[str] = []
 ML_RULES_THR: float = 0.6
+ML_ENSEMBLE_CALIB: dict = {}
+ML_AUX_NOVELTY_CALIB: dict = {}
+MODEL_RECOMMENDED_THRESHOLDS: Dict[str, float] = {}
+ENSEMBLE_RECOMMENDED_THRESHOLD: Optional[float] = None
+AUX_NOVELTY_RECOMMENDED_THRESHOLD: Optional[float] = None
 
 # Cache of loaded model objects
 MODELS: Dict[str, object] = {}
 
 _DEFAULT_FEATURE_ORDER = (
   "endpoint_len,header_count,payload_size,headers_entropy,"
-  "query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code"
+  "query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code,"
+  "query_len,query_entropy,query_value_len_mean,query_value_len_max,empty_query_value_ratio,"
+  "path_entropy,path_digit_ratio,path_upper_ratio,body_len,body_entropy,body_digit_ratio,"
+  "body_punct_ratio,pct_encoded_ratio,header_value_total_len,header_value_max_len"
 )
 FEATURE_ORDER = os.getenv("FEATURE_ORDER", _DEFAULT_FEATURE_ORDER)
 
@@ -101,10 +119,6 @@ MODEL_SCORE_ERRS = Counter("ml_model_infer_errors_total", "Per-model inference e
 
 MODEL_EXISTS = Gauge("ml_model_file_exists", "Model file exists on disk (0/1)", ["kind"])
 MODEL_LOADED = Gauge("ml_model_loaded", "Model loaded in memory (0/1)", ["kind"])
-
-# Calibration params for Isolation Forest scoring
-IF_CALIB_MU    = float(os.getenv("IF_CALIB_MU", "0.0"))
-IF_CALIB_SIGMA = float(os.getenv("IF_CALIB_SIGMA", "0.1"))
 
 CFG_PATH = Path("/models/ml/ml_config.json")
 
@@ -142,6 +156,33 @@ logging.basicConfig(
 log = logging.getLogger("ml-inference")
 
 PRELOAD = os.getenv("PRELOAD_MODELS", "false").lower() in ("1", "true", "yes", "on")
+ANOM_SIGMOID_Z_CLIP = float(os.getenv("ANOM_SIGMOID_Z_CLIP", "30.0"))
+ANOM_PROB_EPS = float(os.getenv("ANOM_PROB_EPS", "1e-12"))
+if (not math.isfinite(ANOM_PROB_EPS)) or ANOM_PROB_EPS <= 0.0 or ANOM_PROB_EPS >= 0.1:
+    ANOM_PROB_EPS = 1e-12
+ML_ENSEMBLE_AGG = os.getenv("ML_ENSEMBLE_AGG", "mean_logit").strip().lower()
+ML_PRIMARY_ENSEMBLE_AGG = os.getenv("ML_PRIMARY_ENSEMBLE_AGG", ML_ENSEMBLE_AGG or "mean_logit").strip().lower()
+ML_AUX_NOVELTY_AGG = os.getenv("ML_AUX_NOVELTY_AGG", "mean_logit").strip().lower()
+ML_AUX_NOVELTY_THRESHOLD_RAW = os.getenv("ML_AUX_NOVELTY_THRESHOLD", "").strip()
+
+def _parse_kind_list(raw: str, default: str) -> List[str]:
+    vals = [x.strip().lower() for x in str(raw or "").split(",") if x.strip()]
+    if not vals:
+        vals = [x.strip().lower() for x in default.split(",") if x.strip()]
+    out: List[str] = []
+    for v in vals:
+        if v not in out:
+            out.append(v)
+    return out
+
+ML_PRIMARY_CORE_KINDS = _parse_kind_list(
+    os.getenv("ML_PRIMARY_CORE_KINDS", "sup_hgb,sup_rf,sup_et"),
+    "sup_hgb,sup_rf,sup_et",
+)
+ML_AUX_NOVELTY_KINDS = _parse_kind_list(
+    os.getenv("ML_AUX_NOVELTY_KINDS", "if,ocsvm,ae,lstm_ae"),
+    "if,ocsvm,ae,lstm_ae",
+)
 
 def _load_impact_policy():
     """Lazy loading of impact_policy.json (used for topic_bump)."""
@@ -177,9 +218,16 @@ def attack_type_to_topic_bump(attack_type: str) -> float:
         return 0.0
 
 def _load_anomaly_calib():
-    """Load calibration parameters for all anomaly models from *.meta.json:
-      {kind: {"mu": ..., "sigma": ...}}.
-    If metadata is missing for a model, skip calibration for that model.
+    """Load calibration parameters for all anomaly models from *.meta.json.
+
+    Structure per model:
+      ANOM_CALIB[kind] = {
+        "mu": float,
+        "sigma": float,
+        "orientation": "identity" | "negate",
+        "temperature": float,  # optional post-calibration temperature scaling
+        "attack_logistic": {"w": float, "b": float, "z_mu": float, "z_sigma": float, ...}  # optional
+      }
     """
     global ANOM_CALIB
     ANOM_CALIB = {}
@@ -192,17 +240,175 @@ def _load_anomaly_calib():
         try:
             meta = json.loads(mp.read_text())
             calib = meta.get("calibration") or {}
+            kind_norm = _normalize_anomaly_kind(kind)
+
             mu = float(calib.get("mu", 0.0))
             sg = float(calib.get("sigma", 0.1))
             if sg <= 1e-9:
                 sg = 0.1
-            ANOM_CALIB[kind] = {"mu": mu, "sigma": sg}
+            try:
+                temp = float(calib.get("temperature", 1.0))
+            except Exception:
+                temp = 1.0
+            if (not math.isfinite(temp)) or temp <= 1e-6:
+                temp = 1.0
+            orientation = _resolve_score_orientation(kind_norm, calibration=calib)
+
+            attack_log = calib.get("attack_logistic") or None
+            if isinstance(attack_log, dict) and "w" in attack_log and "b" in attack_log:
+                try:
+                    w = float(attack_log["w"])
+                    b0 = float(attack_log["b"])
+                    has_z = ("z_mu" in attack_log) and ("z_sigma" in attack_log)
+                    if (kind_norm in ("ae", "lstm_ae")) and (not has_z):
+                        # Legacy AE/LSTM attack_logistic (without standardized input params)
+                        # can collapse runtime scores near 0.5; use mu/sigma path instead.
+                        log.info(
+                            'anomaly_calib_skip_legacy_attack_logistic kind="%s" reason="missing_z_params"',
+                            kind,
+                        )
+                        attack_log = None
+                    else:
+                        z_mu = float(attack_log.get("z_mu", 0.0))
+                        z_sigma = float(attack_log.get("z_sigma", 1.0))
+                        if (not math.isfinite(z_sigma)) or z_sigma <= 1e-12:
+                            z_sigma = 1.0
+                        logit_override = attack_log.get("orientation") if "orientation" in attack_log else "identity"
+                        logit_orientation = _resolve_score_orientation(
+                            kind_norm,
+                            calibration=calib,
+                            override=logit_override,
+                        )
+                        attack_log = {
+                            "w": w,
+                            "b": b0,
+                            "orientation": logit_orientation,
+                            "z_mu": z_mu,
+                            "z_sigma": z_sigma,
+                        }
+                except Exception:
+                    attack_log = None
+            else:
+                attack_log = None
+
+            ANOM_CALIB[kind] = {
+                "mu": mu,
+                "sigma": sg,
+                "orientation": orientation,
+                "temperature": temp,
+            }
+            if attack_log is not None:
+                ANOM_CALIB[kind]["attack_logistic"] = attack_log
+            ecdf_risk = _normalize_ecdf_risk(calib.get("ecdf_risk"))
+            if ecdf_risk is not None:
+                ANOM_CALIB[kind]["ecdf_risk"] = ecdf_risk
+            prior_cfg = calib.get("prior_correction")
+            if isinstance(prior_cfg, dict) and bool(prior_cfg.get("enabled", False)):
+                try:
+                    p_cal = float(prior_cfg.get("calibration_prior"))
+                    p_dep = float(prior_cfg.get("deployment_prior"))
+                    if (
+                        math.isfinite(p_cal)
+                        and math.isfinite(p_dep)
+                        and 0.0 < p_cal < 1.0
+                        and 0.0 < p_dep < 1.0
+                    ):
+                        ANOM_CALIB[kind]["prior_correction"] = {
+                            "enabled": True,
+                            "calibration_prior": p_cal,
+                            "deployment_prior": p_dep,
+                            "method": str(prior_cfg.get("method", "odds_correction")),
+                        }
+                except Exception:
+                    pass
+
             log.info(
-                'anomaly_calib_loaded kind="%s" mu=%.6f sigma=%.6f',
-                kind, mu, sg
+                'anomaly_calib_loaded kind="%s" mu=%.6f sigma=%.6f orientation=%s temp=%.4f has_attack_logistic=%s has_ecdf_risk=%s has_prior_correction=%s',
+                kind,
+                mu,
+                sg,
+                orientation,
+                temp,
+                bool(attack_log),
+                bool(ecdf_risk),
+                bool(ANOM_CALIB[kind].get("prior_correction")),
             )
         except Exception:
             log.exception("anomaly_calib_read_failed kind=%s meta=%s", kind, str(mp))
+
+def _load_ensemble_calib():
+    """Load optional ensemble-level calibration from /models/ml/ml_ensemble.meta.json."""
+    global ML_ENSEMBLE_CALIB, ML_AUX_NOVELTY_CALIB
+    ML_ENSEMBLE_CALIB = {}
+    ML_AUX_NOVELTY_CALIB = {}
+    mp = Path("/models/ml/ml_ensemble.meta.json")
+    if not mp.exists():
+        return
+    try:
+        meta = json.loads(mp.read_text())
+        calib = meta.get("calibration") or {}
+        t = float(calib.get("temperature", 1.0))
+        if (not math.isfinite(t)) or t <= 1e-6:
+            t = 1.0
+        ML_ENSEMBLE_CALIB = {"temperature": t}
+        prior_cfg = calib.get("prior_correction")
+        if isinstance(prior_cfg, dict) and bool(prior_cfg.get("enabled", False)):
+            try:
+                p_cal = float(prior_cfg.get("calibration_prior"))
+                p_dep = float(prior_cfg.get("deployment_prior"))
+                if (
+                    math.isfinite(p_cal)
+                    and math.isfinite(p_dep)
+                    and 0.0 < p_cal < 1.0
+                    and 0.0 < p_dep < 1.0
+                ):
+                    ML_ENSEMBLE_CALIB["prior_correction"] = {
+                        "enabled": True,
+                        "calibration_prior": p_cal,
+                        "deployment_prior": p_dep,
+                        "method": str(prior_cfg.get("method", "odds_correction")),
+                    }
+            except Exception:
+                pass
+        aux_calib = meta.get("aux_novelty_calibration")
+        if isinstance(aux_calib, dict):
+            try:
+                aux_t = float(aux_calib.get("temperature", 1.0))
+            except Exception:
+                aux_t = 1.0
+            if (not math.isfinite(aux_t)) or aux_t <= 1e-6:
+                aux_t = 1.0
+            ML_AUX_NOVELTY_CALIB = {"temperature": aux_t}
+            aux_prior_cfg = aux_calib.get("prior_correction")
+            if isinstance(aux_prior_cfg, dict) and bool(aux_prior_cfg.get("enabled", False)):
+                try:
+                    p_cal = float(aux_prior_cfg.get("calibration_prior"))
+                    p_dep = float(aux_prior_cfg.get("deployment_prior"))
+                    if (
+                        math.isfinite(p_cal)
+                        and math.isfinite(p_dep)
+                        and 0.0 < p_cal < 1.0
+                        and 0.0 < p_dep < 1.0
+                    ):
+                        ML_AUX_NOVELTY_CALIB["prior_correction"] = {
+                            "enabled": True,
+                            "calibration_prior": p_cal,
+                            "deployment_prior": p_dep,
+                            "method": str(aux_prior_cfg.get("method", "odds_correction")),
+                        }
+                except Exception:
+                    pass
+        log.info(
+            'ml_ensemble_calib_loaded temperature=%.4f has_prior_correction=%s aux_temperature=%.4f aux_has_prior_correction=%s',
+            t,
+            bool(ML_ENSEMBLE_CALIB.get("prior_correction")),
+            float((ML_AUX_NOVELTY_CALIB or {}).get("temperature", 1.0)),
+            bool((ML_AUX_NOVELTY_CALIB or {}).get("prior_correction")),
+        )
+    except Exception:
+        log.exception("ml_ensemble_calib_read_failed")
+        ML_ENSEMBLE_CALIB = {}
+        ML_AUX_NOVELTY_CALIB = {}
 
 def _load_rules_clf():
     """Load the rules-supervised classifier and metadata (if present on disk)."""
@@ -235,9 +441,65 @@ def _load_rules_clf():
     except Exception:
         log.exception("rules_clf_load_failed")
 
+
+def _load_recommended_thresholds():
+    """
+    Load recommended thresholds from model metadata.
+    - Ensemble threshold: /models/ml/ml_ensemble.meta.json:recommended_threshold
+    - Per-model thresholds: <model>.meta.json:recommended_threshold
+    - Rules classifier threshold: ML_RULES_META_PATH:recommended_threshold
+    """
+    global MODEL_RECOMMENDED_THRESHOLDS, ENSEMBLE_RECOMMENDED_THRESHOLD, AUX_NOVELTY_RECOMMENDED_THRESHOLD
+    MODEL_RECOMMENDED_THRESHOLDS = {}
+    ENSEMBLE_RECOMMENDED_THRESHOLD = None
+    AUX_NOVELTY_RECOMMENDED_THRESHOLD = None
+
+    try:
+        em_path = Path("/models/ml/ml_ensemble.meta.json")
+        if em_path.exists():
+            meta = json.loads(em_path.read_text())
+            rt = meta.get("recommended_threshold")
+            if isinstance(rt, (int, float)):
+                ENSEMBLE_RECOMMENDED_THRESHOLD = float(rt)
+            rt_aux = meta.get("recommended_aux_novelty_threshold")
+            if isinstance(rt_aux, (int, float)):
+                AUX_NOVELTY_RECOMMENDED_THRESHOLD = float(rt_aux)
+    except Exception:
+        log.exception("ml_ensemble_threshold_read_failed")
+
+    for kind, path in MODEL_REGISTRY.items():
+        try:
+            if not path:
+                continue
+            mp = Path(path).with_suffix(".meta.json")
+            if not mp.exists():
+                continue
+            meta = json.loads(mp.read_text())
+            rt = meta.get("recommended_threshold")
+            if isinstance(rt, (int, float)):
+                MODEL_RECOMMENDED_THRESHOLDS[kind] = float(rt)
+        except Exception:
+            continue
+
+    try:
+        mp = Path(ML_RULES_META_PATH)
+        if mp.exists():
+            meta = json.loads(mp.read_text())
+            rt = meta.get("recommended_threshold")
+            if isinstance(rt, (int, float)):
+                MODEL_RECOMMENDED_THRESHOLDS["rules_clf"] = float(rt)
+    except Exception:
+        pass
+
+    log.info(
+        'recommended_thresholds_loaded ensemble=%s aux_novelty=%s per_model=%s',
+        ENSEMBLE_RECOMMENDED_THRESHOLD,
+        AUX_NOVELTY_RECOMMENDED_THRESHOLD,
+        MODEL_RECOMMENDED_THRESHOLDS,
+    )
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global IF_CALIB_MU, IF_CALIB_SIGMA
     if PRELOAD:
         for kind, path in MODEL_REGISTRY.items():
             exists = bool(path and Path(path).exists())
@@ -260,22 +522,10 @@ async def lifespan(app: FastAPI):
             MODEL_EXISTS.labels(kind).set(1.0 if (path and Path(path).exists()) else 0.0)
             MODEL_LOADED.labels(kind).set(1.0 if (kind in MODELS) else 0.0)
 
-    # IF calibration from meta
-    meta_path = Path(MODEL_REGISTRY.get("if","")).with_suffix(".meta.json")
-    if meta_path.exists():
-        try:
-            with meta_path.open("r") as f:
-                meta = json.load(f)
-            calib = meta.get("calibration") or {}
-            mu = float(calib.get("mu", IF_CALIB_MU))
-            sg = float(calib.get("sigma", IF_CALIB_SIGMA))
-            IF_CALIB_MU, IF_CALIB_SIGMA = mu, (sg if sg>1e-9 else IF_CALIB_SIGMA)
-            log.info(f'if_calibration_loaded mu={IF_CALIB_MU:.6f} sigma={IF_CALIB_SIGMA:.6f}')
-        except Exception:
-            log.exception("if_calibration_meta_read_failed")
-
     _load_rules_clf()
     _load_anomaly_calib()
+    _load_ensemble_calib()
+    _load_recommended_thresholds()
     _load_impact_policy()
     yield
     MODELS.clear()
@@ -290,8 +540,42 @@ class ScoreIn(BaseModel):
 class ScoreOut(BaseModel):
     hash_id: str
     ml_score: float = Field(..., ge=0.0, le=1.0)
+    ml_primary_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    ml_aux_novelty_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    ml_aux_novelty_threshold: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    ml_aux_novelty_hit: Optional[bool] = None
     threshold: float = Field(..., ge=0.0, le=1.0)
     threshold_hit: bool
+    per_model: List[Dict[str, object]] = Field(
+        default_factory=list,
+        description="Legacy list format [{'kind':..., 'score':...}] for orchestrator/fusion compatibility."
+    )
+    per_model_scores: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Per-model scores (if/ocsvm/ae/lstm_ae/sup_*/rules_clf/fallback)"
+    )
+    primary_model_scores: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Primary supervised-core model scores used for ml_score aggregation."
+    )
+    aux_novelty_model_scores: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Auxiliary novelty model scores (IF/OCSVM/AE/LSTM-AE)."
+    )
+    per_model_thresholds: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Per-model recommended thresholds from model metadata."
+    )
+    per_model_threshold_hits: Dict[str, bool] = Field(
+        default_factory=dict,
+        description="Per-model threshold hits (score >= per-model threshold)."
+    )
+    per_model_hit_ratio: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Mean of per-model threshold hits; diagnostic only."
+    )
 
 class ScoreBatchIn(BaseModel):
     items: List[ScoreIn] = Field(..., min_items=1)
@@ -306,28 +590,263 @@ def _sigmoid(x: float) -> float:
     except Exception:
         return 0.5
 
-def _calibrated_anomaly_score(kind: str, decision_value: float) -> float:
-    """
-    Calibrate anomaly score (e.g., from Isolation Forest, OCSVM, AE) to [0..1] using z-score and sigmoid.
-    If calibration parameters are missing for the model kind, return 0.5 (neutral score).
-    
-    Args:
-        kind (str): Model kind (e.g., "if", "ocsvm", "ae", "lstm_ae").
-        decision_value (float): Raw anomaly score from the model.
-    Returns:
-        float: Calibrated score in [0..1].
-    """
+def _clip01(x: float) -> float:
     try:
-        c = ANOM_CALIB.get(kind)
-        if not c:
-            return 0.5
-        mu = float(c["mu"])
-        sg = float(c["sigma"])
-        if sg <= 1e-9:
-            sg = 0.1
-        z = -(float(decision_value) - mu) / sg
-        return _sigmoid(z)
+        return float(max(0.0, min(1.0, x)))
     except Exception:
+        return 0.0
+
+def _normalize_anomaly_kind(kind: str | None) -> str:
+    k = (kind or "").strip().lower()
+    if "ocsvm" in k:
+        return "ocsvm"
+    if "if" in k:
+        return "if"
+    if "lstm" in k:
+        return "lstm_ae"
+    if "ae" in k:
+        return "ae"
+    return k or "if"
+
+def _default_score_orientation(kind_norm: str) -> str:
+    return "negate" if kind_norm in ("if", "ocsvm") else "identity"
+
+def _resolve_score_orientation(
+    kind: str | None,
+    calibration: Optional[dict] = None,
+    override: Optional[str] = None,
+) -> str:
+    candidates: List[Optional[str]] = [override]
+    if isinstance(calibration, dict):
+        candidates.append(calibration.get("orientation"))
+        attack_log = calibration.get("attack_logistic")
+        if isinstance(attack_log, dict):
+            candidates.append(attack_log.get("orientation"))
+
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        value = str(candidate).strip().lower()
+        if value in ("negate", "flip", "reverse", "-1"):
+            return "negate"
+        if value in ("identity", "as_is", "none", "+1", "1"):
+            return "identity"
+
+    return _default_score_orientation(_normalize_anomaly_kind(kind))
+
+def _oriented_stats(stats: np.ndarray, orientation: str) -> np.ndarray:
+    if orientation == "negate":
+        return -stats
+    return stats
+
+def _safe_logit(p: np.ndarray, eps: float | None = None) -> np.ndarray:
+    if eps is None:
+        eps = ANOM_PROB_EPS
+    p = np.asarray(p, dtype=float)
+    p = np.clip(p, eps, 1.0 - eps)
+    return np.log(p / (1.0 - p))
+
+def _sigmoid_stable(z: np.ndarray) -> np.ndarray:
+    z = np.asarray(z, dtype=float)
+    out = np.empty_like(z, dtype=float)
+    pos = z >= 0.0
+    out[pos] = 1.0 / (1.0 + np.exp(-z[pos]))
+    ez = np.exp(z[~pos])
+    out[~pos] = ez / (1.0 + ez)
+    return out
+
+def _compress_monotone_knots(x: np.ndarray, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    x = np.asarray(x, dtype=float).reshape(-1)
+    p = np.asarray(p, dtype=float).reshape(-1)
+    if x.size == 0 or p.size == 0 or x.size != p.size:
+        return np.asarray([], dtype=float), np.asarray([], dtype=float)
+    order = np.argsort(x, kind="mergesort")
+    x = x[order]
+    p = p[order]
+    p = np.maximum.accumulate(p)
+    if x.size == 1:
+        return x, p
+    keep = np.r_[x[1:] > x[:-1], True]
+    return x[keep], p[keep]
+
+def _normalize_ecdf_risk(mapping: Optional[dict]) -> Optional[dict]:
+    if not isinstance(mapping, dict):
+        return None
+    x_raw = mapping.get("x")
+    p_raw = mapping.get("p")
+    if not isinstance(x_raw, list) or not isinstance(p_raw, list):
+        return None
+    if len(x_raw) < 2 or len(p_raw) < 2 or len(x_raw) != len(p_raw):
+        return None
+    try:
+        x = np.asarray(x_raw, dtype=float).reshape(-1)
+        p = np.asarray(p_raw, dtype=float).reshape(-1)
+    except Exception:
+        return None
+    x, p = _compress_monotone_knots(x, p)
+    if x.size < 2:
+        return None
+    p = np.clip(p, ANOM_PROB_EPS, 1.0 - ANOM_PROB_EPS)
+    return {
+        "method": str(mapping.get("method", "ecdf_quantile")),
+        "x": [float(v) for v in x],
+        "p": [float(v) for v in p],
+        "n_ref": int(mapping.get("n_ref", 0)) if isinstance(mapping.get("n_ref"), (int, float)) else 0,
+        "n_knots": int(x.size),
+    }
+
+def _apply_ecdf_risk_mapping(stats: np.ndarray, mapping: Optional[dict]) -> Optional[np.ndarray]:
+    norm = _normalize_ecdf_risk(mapping)
+    if norm is None:
+        return None
+    x = np.asarray(norm["x"], dtype=float).reshape(-1)
+    p = np.asarray(norm["p"], dtype=float).reshape(-1)
+    s = np.asarray(stats, dtype=float).reshape(-1)
+    out = np.interp(s, x, p)
+    dx_l = float(x[1] - x[0])
+    dx_r = float(x[-1] - x[-2])
+    slope_l = float((p[1] - p[0]) / dx_l) if dx_l > 0.0 else 0.0
+    slope_r = float((p[-1] - p[-2]) / dx_r) if dx_r > 0.0 else 0.0
+    m_l = s < x[0]
+    m_r = s > x[-1]
+    if np.any(m_l):
+        out[m_l] = float(p[0]) + slope_l * (s[m_l] - float(x[0]))
+    if np.any(m_r):
+        out[m_r] = float(p[-1]) + slope_r * (s[m_r] - float(x[-1]))
+    return np.clip(out, ANOM_PROB_EPS, 1.0 - ANOM_PROB_EPS)
+
+def _apply_temperature_scaling(scores: np.ndarray, temperature: float | None) -> np.ndarray:
+    s = np.asarray(scores, dtype=float).reshape(-1)
+    if s.size == 0:
+        return s
+    try:
+        t = float(temperature)
+    except Exception:
+        t = 1.0
+    if (not math.isfinite(t)) or t <= 1e-6:
+        t = 1.0
+    s = np.clip(s, 0.0, 1.0)
+    if abs(t - 1.0) <= 1e-9:
+        return s
+    logits = _safe_logit(s, eps=ANOM_PROB_EPS) / t
+    return _sigmoid_stable(logits)
+
+def _apply_prior_correction_probs(scores: np.ndarray, prior_cfg: Optional[dict]) -> np.ndarray:
+    s = np.asarray(scores, dtype=float).reshape(-1)
+    if not isinstance(prior_cfg, dict):
+        return s
+    if not bool(prior_cfg.get("enabled", False)):
+        return s
+    try:
+        p_cal = float(prior_cfg.get("calibration_prior"))
+        p_dep = float(prior_cfg.get("deployment_prior"))
+    except Exception:
+        return s
+    if (
+        (not math.isfinite(p_cal))
+        or (not math.isfinite(p_dep))
+        or p_cal <= 0.0
+        or p_cal >= 1.0
+        or p_dep <= 0.0
+        or p_dep >= 1.0
+    ):
+        return s
+    odds = np.exp(_safe_logit(np.clip(s, ANOM_PROB_EPS, 1.0 - ANOM_PROB_EPS), eps=ANOM_PROB_EPS))
+    prior_ratio = (p_dep / (1.0 - p_dep)) / (p_cal / (1.0 - p_cal))
+    odds_adj = odds * prior_ratio
+    return odds_adj / (1.0 + odds_adj)
+
+def _sigmoid_from_logit_with_temperature(
+    logits: np.ndarray,
+    temperature: float | None,
+) -> np.ndarray:
+    z = np.asarray(logits, dtype=float).reshape(-1)
+    try:
+        t = float(temperature)
+    except Exception:
+        t = 1.0
+    if (not math.isfinite(t)) or t <= 1e-6:
+        t = 1.0
+    if abs(t - 1.0) > 1e-9:
+        z = z / t
+    return _sigmoid_stable(z)
+
+def _score_from_stat_with_calib(
+    stats,
+    calibration: Optional[dict],
+    kind: str,
+    z0: float = 1.0,
+    z1: float = 5.0,
+):
+    stats = np.asarray(stats, dtype=float).reshape(-1)
+    if stats.size == 0:
+        return np.zeros_like(stats)
+
+    calib = calibration or {}
+    kind_norm = _normalize_anomaly_kind(kind)
+    orientation = _resolve_score_orientation(kind_norm, calibration=calib)
+    oriented = _oriented_stats(stats, orientation)
+
+    attack_log = calib.get("attack_logistic")
+    if isinstance(attack_log, dict):
+        try:
+            w = float(attack_log["w"])
+            b0 = float(attack_log["b"])
+            logit_override = attack_log.get("orientation") if "orientation" in attack_log else "identity"
+            logit_orientation = _resolve_score_orientation(
+                kind_norm,
+                calibration=calib,
+                override=logit_override,
+            )
+            oriented_for_logit = _oriented_stats(stats, logit_orientation)
+            z_mu = float(attack_log.get("z_mu", 0.0))
+            z_sigma = float(attack_log.get("z_sigma", 1.0))
+            if (not math.isfinite(z_sigma)) or z_sigma <= 1e-12:
+                z_sigma = 1.0
+            oriented_for_logit = (oriented_for_logit - z_mu) / z_sigma
+            z = w * oriented_for_logit + b0
+            p = _sigmoid_from_logit_with_temperature(z, calib.get("temperature", 1.0))
+            return _apply_prior_correction_probs(p, calib.get("prior_correction"))
+        except Exception:
+            pass
+
+    p_ecdf = _apply_ecdf_risk_mapping(oriented, calib.get("ecdf_risk"))
+    if p_ecdf is not None:
+        p = _apply_temperature_scaling(p_ecdf, calib.get("temperature", 1.0))
+        return _apply_prior_correction_probs(p, calib.get("prior_correction"))
+
+    mu = calib.get("mu")
+    sigma = calib.get("sigma")
+
+    try:
+        mu = float(mu)
+    except Exception:
+        mu = float(oriented.mean())
+
+    try:
+        sigma = float(sigma)
+    except Exception:
+        sigma = float(oriented.std() or 1.0)
+
+    if (not math.isfinite(sigma)) or sigma <= 1e-9:
+        sigma = 1.0
+
+    z = (oriented - mu) / sigma
+    p = _sigmoid_from_logit_with_temperature(z, calib.get("temperature", 1.0))
+    return _apply_prior_correction_probs(p, calib.get("prior_correction"))
+
+def _calibrated_anomaly_score(kind: str, decision_value: float) -> float:
+    try:
+        kind_norm = _normalize_anomaly_kind(kind)
+        calib = ANOM_CALIB.get(kind_norm) or {}
+        scores = _score_from_stat_with_calib(
+            [decision_value],
+            calib,
+            kind_norm,
+        )
+        return _clip01(float(scores[0]))
+    except Exception:
+        log.exception("calibrated_anomaly_score_failed kind=%s", kind)
         return 0.5
 
 def _feature_sig() -> str:
@@ -337,47 +856,81 @@ def _feature_sig() -> str:
 
 def _load_recommended_threshold() -> Optional[float]:
     """
-    Load recommended_threshold from:
-    1) ML_RULES_META (if present)
-    2) *.meta.json files alongside each model in MODEL_REGISTRY
-    Returns the maximum recommended_threshold found, or None if none found.
+    Return recommended threshold for the aggregated ML score.
+    Priority:
+      1) ensemble threshold from ml_ensemble.meta.json
+      2) single-model threshold when only one model threshold exists
+      3) None
     """
-    recs: List[float] = []
-    # 1) rules_clf meta
-    try:
-        mp = Path(ML_RULES_META_PATH)
-        if mp.exists():
-            meta = json.loads(mp.read_text())
-            rt = meta.get("recommended_threshold")
-            if isinstance(rt, (int, float)):
-                recs.append(float(rt))
-    except Exception:
-        pass
-    # 2) *.meta.json files alongside each model (if/ocsvm/ae/lstm_ae)
-    for kind, path in MODEL_REGISTRY.items():
-        try:
-            if not path:
-                continue
-            mp = Path(path).with_suffix(".meta.json")
-            if not mp.exists():
-                continue
-            meta = json.loads(mp.read_text())
-            rt = meta.get("recommended_threshold")
-            if isinstance(rt, (int, float)):
-                recs.append(float(rt))
-        except Exception:
-            continue
-    return max(recs) if recs else None
+    if isinstance(ENSEMBLE_RECOMMENDED_THRESHOLD, (int, float)):
+        return float(ENSEMBLE_RECOMMENDED_THRESHOLD)
+    if len(MODEL_RECOMMENDED_THRESHOLDS) == 1:
+        return float(next(iter(MODEL_RECOMMENDED_THRESHOLDS.values())))
+    return None
 
-def _effective_threshold() -> float:
-    """ENV ML_THRESHOLD > meta(recommended_threshold) > 0.60."""
+
+def _effective_threshold_with_source() -> tuple[float, str]:
+    """
+    Threshold for ml_score decision.
+    ENV ML_THRESHOLD is treated as explicit alert override.
+    """
     if ML_THRESHOLD_RAW:
         try:
-            return float(ML_THRESHOLD_RAW)
+            return float(ML_THRESHOLD_RAW), "env:ML_THRESHOLD"
         except Exception:
             log.warning('bad_env_threshold value="%s"', ML_THRESHOLD_RAW)
     rt = _load_recommended_threshold()
-    return float(rt) if isinstance(rt, (float, int)) else 0.60
+    if isinstance(rt, (int, float)):
+        if isinstance(ENSEMBLE_RECOMMENDED_THRESHOLD, (int, float)):
+            return float(rt), "meta:ml_ensemble.recommended_threshold"
+        if len(MODEL_RECOMMENDED_THRESHOLDS) == 1:
+            only_kind = next(iter(MODEL_RECOMMENDED_THRESHOLDS.keys()))
+            return float(rt), f"meta:{only_kind}.recommended_threshold(single-model)"
+    return 0.60, "default:0.60"
+
+
+def _effective_threshold() -> float:
+    return float(_effective_threshold_with_source()[0])
+
+
+def _effective_aux_novelty_threshold() -> float:
+    if ML_AUX_NOVELTY_THRESHOLD_RAW:
+        try:
+            return float(ML_AUX_NOVELTY_THRESHOLD_RAW)
+        except Exception:
+            log.warning('bad_env_aux_novelty_threshold value="%s"', ML_AUX_NOVELTY_THRESHOLD_RAW)
+    if isinstance(AUX_NOVELTY_RECOMMENDED_THRESHOLD, (int, float)):
+        return float(AUX_NOVELTY_RECOMMENDED_THRESHOLD)
+    return 0.8
+
+
+def _per_model_threshold_diagnostics(per: List[Dict[str, float]]) -> tuple[Dict[str, float], Dict[str, bool], Optional[float]]:
+    """
+    Diagnostic only:
+      - threshold per model (from model metadata)
+      - hit per model (score >= threshold)
+      - mean hit ratio across models with known thresholds
+    """
+    thresholds: Dict[str, float] = {}
+    hits: Dict[str, bool] = {}
+    for item in (per or []):
+        kind = str(item.get("kind") or "").strip().lower()
+        if not kind or kind == "fallback":
+            continue
+        thr = MODEL_RECOMMENDED_THRESHOLDS.get(kind)
+        if not isinstance(thr, (int, float)):
+            continue
+        try:
+            score = float(item.get("score", 0.0))
+            thresholds[kind] = float(thr)
+            hits[kind] = bool(score >= float(thr))
+        except Exception:
+            continue
+
+    ratio: Optional[float] = None
+    if hits:
+        ratio = float(sum(1.0 if v else 0.0 for v in hits.values()) / len(hits))
+    return thresholds, hits, ratio
 
 def _deep_update(d, u):
     for k, v in u.items():
@@ -504,7 +1057,8 @@ def adapt_features(nf_in: Dict[str, float]) -> Dict[str, float]:
 
 def _auto_select_models(nf: Dict[str, float]) -> List[str]:
     """Select all available anomaly models:
-      • if, ocsvm, ae, lstm_ae — when their model files are present,
+      • if, ocsvm, ae, lstm_ae and supervised baselines (sup_*),
+        when their model files are present,
       • nf is used only to keep the function signature consistent.
 
     Routing by "heaviness" (susp/psize/qp/lat) is disabled — all models
@@ -535,11 +1089,30 @@ def _score_one(kind: str, vec: List[float], nf: Dict[str, float]) -> Optional[fl
         if m is None:
             return None
 
+        # 0) supervised numeric baselines: obtain raw attack probability first,
+        # then pass through shared runtime calibration from *.meta.json.
+        if kind in SUPERVISED_NUMERIC_KINDS:
+            est = m.get("clf") if isinstance(m, dict) and ("clf" in m) else m
+            x = np.array(vec, dtype=float).reshape(1, -1)
+            if hasattr(est, "predict_proba"):
+                raw = float(est.predict_proba(x)[0, 1])
+                return _calibrated_anomaly_score(kind, raw)
+            if hasattr(est, "decision_function"):
+                raw = float(_sigmoid(float(est.decision_function(x)[0])))
+                return _calibrated_anomaly_score(kind, raw)
+            if hasattr(est, "predict"):
+                raw = float(est.predict(x)[0])
+                return _calibrated_anomaly_score(kind, raw)
+            return None
+
         # 1) sklearn-like anomaly models (IF, OCSVM, custom wrappers)
+        # Prefer score_samples for IF/OCSVM to keep scoring semantics aligned with retrain.
+        if kind in ("if", "ocsvm") and hasattr(m, "score_samples"):
+            raw = float(m.score_samples([vec])[0])
+            return _calibrated_anomaly_score(kind, raw)
         if hasattr(m, "decision_function"):
             raw = float(m.decision_function([vec])[0])
             return _calibrated_anomaly_score(kind, raw)
-
         if hasattr(m, "score_samples"):
             raw = float(m.score_samples([vec])[0])
             return _calibrated_anomaly_score(kind, raw)
@@ -585,10 +1158,44 @@ def _score_one(kind: str, vec: List[float], nf: Dict[str, float]) -> Optional[fl
         log.exception("model_infer_failed kind=%s", kind)
         return None
 
-def _aggregate_scores(per: List[Dict[str, float]]) -> float:
+def _aggregate_scores(
+    per: List[Dict[str, float]],
+    method: Optional[str] = None,
+    calibration: Optional[dict] = None,
+) -> float:
     if not per:
         return 0.0
-    return max(p["score"] for p in per if "score" in p)
+    vals = np.asarray([float(p["score"]) for p in per if "score" in p], dtype=float)
+    if vals.size == 0:
+        return 0.0
+    if vals.size == 1:
+        return _clip01(float(vals[0]))
+    method_norm = (method or ML_ENSEMBLE_AGG or "mean_logit").strip().lower()
+    if method_norm in ("max", "or", "max_per_model"):
+        out = _clip01(float(np.max(vals)))
+    elif method_norm in ("mean", "avg", "average"):
+        out = _clip01(float(np.mean(vals)))
+    else:
+        vals = np.clip(vals, 1e-6, 1.0 - 1e-6)
+        logits = np.log(vals / (1.0 - vals))
+        v = float(np.mean(logits))
+        out = _clip01(float(_sigmoid_stable(np.array([v], dtype=float))[0]))
+
+    try:
+        calib = calibration if isinstance(calibration, dict) else (ML_ENSEMBLE_CALIB or {})
+        t = float((calib or {}).get("temperature", 1.0))
+        if math.isfinite(t) and t > 1e-6 and abs(t - 1.0) > 1e-9:
+            out = float(_apply_temperature_scaling(np.array([out], dtype=float), t)[0])
+    except Exception:
+        pass
+    try:
+        calib = calibration if isinstance(calibration, dict) else (ML_ENSEMBLE_CALIB or {})
+        prior_cfg = (calib or {}).get("prior_correction")
+        if isinstance(prior_cfg, dict) and bool(prior_cfg.get("enabled", False)):
+            out = float(_apply_prior_correction_probs(np.array([out], dtype=float), prior_cfg)[0])
+    except Exception:
+        pass
+    return _clip01(out)
 
 def _score_rules_clf(nf: Dict[str, float]) -> Optional[float]:
     """Return the probability of class 1 from the rules-supervised GBDT classifier, or None."""
@@ -649,12 +1256,21 @@ def ready():
         except Exception:
             pass
 
+    thr, thr_source = _effective_threshold_with_source()
+
     return {
         "models": models_status,
         "supported_kinds": list(MODEL_REGISTRY.keys()),
+        "primary_core_kinds": list(ML_PRIMARY_CORE_KINDS),
+        "aux_novelty_kinds": list(ML_AUX_NOVELTY_KINDS),
         "feature_order": feature_order_list,
         "feature_order_sig": _feature_sig(),
-        "threshold": _effective_threshold(),
+        "threshold": float(thr),
+        "threshold_source": thr_source,
+        "aux_novelty_threshold": float(_effective_aux_novelty_threshold()),
+        "per_model_recommended_thresholds": MODEL_RECOMMENDED_THRESHOLDS,
+        "ensemble_recommended_threshold": ENSEMBLE_RECOMMENDED_THRESHOLD,
+        "aux_novelty_recommended_threshold": AUX_NOVELTY_RECOMMENDED_THRESHOLD,
         "feature_order_match": (not meta_sig) or (meta_mismatch is False),
         "config": CFG,
         "rules_clf_loaded": bool(ML_RULES),
@@ -679,6 +1295,7 @@ def ml_models():
         }
     return {
         "threshold": _effective_threshold(),
+        "aux_novelty_threshold": _effective_aux_novelty_threshold(),
         "feature_order_sig": _feature_sig(),
         "models": items,
     }
@@ -690,7 +1307,7 @@ def score(inp: ScoreIn, response: Response):
       • select models (_auto_select_models),
       • compute a unified anomaly score per model via _score_one() (with calibration),
       • optionally add the rules-supervised classifier score,
-      • aggregate max(per_model_scores) as ml_score,
+      • aggregate per_model_scores as ml_score (method via ML_ENSEMBLE_AGG),
       • if no model scores are available, fall back to _fallback_score.
     """
     with SCORE_LAT.time():
@@ -725,19 +1342,58 @@ def score(inp: ScoreIn, response: Response):
             # if there are no per-model scores — fallback
             if not per:
                 ml_score = _fallback_score(nf)
+                ml_primary_score = ml_score
+                ml_aux_score = None
+                ml_aux_thr = _effective_aux_novelty_threshold()
+                ml_aux_hit = False
+                per = [{"kind": "fallback", "score": float(ml_score)}]
                 per_model_scores = {"fallback": ml_score}
+                primary_model_scores = {}
+                aux_novelty_model_scores = {}
             else:
-                ml_score = _aggregate_scores(per)
+                primary_per = [p for p in per if str(p.get("kind", "")).lower() in ML_PRIMARY_CORE_KINDS]
+                if not primary_per:
+                    # Graceful fallback when supervised-core artifacts are not present.
+                    primary_per = [p for p in per if str(p.get("kind", "")).lower() in SUPERVISED_NUMERIC_KINDS]
+                if not primary_per:
+                    primary_per = list(per)
+
+                aux_per = [p for p in per if str(p.get("kind", "")).lower() in ML_AUX_NOVELTY_KINDS]
+
+                ml_primary_score = _aggregate_scores(
+                    primary_per,
+                    method=ML_PRIMARY_ENSEMBLE_AGG,
+                    calibration=ML_ENSEMBLE_CALIB,
+                )
+                ml_score = float(ml_primary_score)
+                ml_aux_score = (
+                    _aggregate_scores(
+                        aux_per,
+                        method=ML_AUX_NOVELTY_AGG,
+                        calibration=ML_AUX_NOVELTY_CALIB,
+                    ) if aux_per else None
+                )
+                ml_aux_thr = _effective_aux_novelty_threshold()
+                ml_aux_hit = bool((ml_aux_score is not None) and (float(ml_aux_score) >= float(ml_aux_thr)))
                 per_model_scores = {p["kind"]: p["score"] for p in per}
+                primary_model_scores = {p["kind"]: p["score"] for p in primary_per}
+                aux_novelty_model_scores = {p["kind"]: p["score"] for p in aux_per}
 
             thr = _effective_threshold()
             hit = bool(ml_score >= thr)
+            per_thr, per_hits, per_ratio = _per_model_threshold_diagnostics(per)
 
             SCORE_REQS.labels("ok").inc()
             try:
                 log.info(
-                    'ml_score hash_id="%s" score=%.4f thr=%.4f hit=%s per_models=%s',
-                    inp.hash_id, ml_score, thr, str(hit),
+                    'ml_score hash_id="%s" score=%.4f primary=%.4f aux=%s aux_thr=%.4f thr=%.4f hit=%s per_models=%s',
+                    inp.hash_id,
+                    ml_score,
+                    float(ml_primary_score),
+                    f"{float(ml_aux_score):.4f}" if ml_aux_score is not None else "null",
+                    float(ml_aux_thr),
+                    thr,
+                    str(hit),
                     json.dumps(per_model_scores)
                 )
             except Exception:
@@ -746,9 +1402,21 @@ def score(inp: ScoreIn, response: Response):
             return ScoreOut(
                 hash_id=inp.hash_id,
                 ml_score=float(ml_score),
+                ml_primary_score=float(ml_primary_score),
+                ml_aux_novelty_score=(float(ml_aux_score) if ml_aux_score is not None else None),
+                ml_aux_novelty_threshold=float(ml_aux_thr),
+                ml_aux_novelty_hit=bool(ml_aux_hit),
                 threshold=float(thr),
-                threshold_hit=hit,
+                threshold_hit=bool(hit),
+                per_model=[{"kind": str(p["kind"]), "score": float(p["score"])} for p in per],
+                per_model_scores={k: float(v) for k, v in per_model_scores.items()},
+                primary_model_scores={k: float(v) for k, v in primary_model_scores.items()},
+                aux_novelty_model_scores={k: float(v) for k, v in aux_novelty_model_scores.items()},
+                per_model_thresholds={k: float(v) for k, v in per_thr.items()},
+                per_model_threshold_hits={k: bool(v) for k, v in per_hits.items()},
+                per_model_hit_ratio=(float(per_ratio) if per_ratio is not None else None),
             )
+
         except Exception:
             SCORE_REQS.labels("error").inc()
             log.exception("score_failed")
@@ -758,8 +1426,19 @@ def score(inp: ScoreIn, response: Response):
             return ScoreOut(
                 hash_id=inp.hash_id,
                 ml_score=float(fb),
+                ml_primary_score=float(fb),
+                ml_aux_novelty_score=None,
+                ml_aux_novelty_threshold=float(_effective_aux_novelty_threshold()),
+                ml_aux_novelty_hit=False,
                 threshold=float(thr),
                 threshold_hit=bool(fb >= thr),
+                per_model=[{"kind": "fallback", "score": float(fb)}],
+                per_model_scores={"fallback": float(fb)},
+                primary_model_scores={},
+                aux_novelty_model_scores={},
+                per_model_thresholds={},
+                per_model_threshold_hits={},
+                per_model_hit_ratio=None,
             )
 
 @app.post("/score_batch")
@@ -792,14 +1471,49 @@ def score_batch(inp: ScoreBatchIn, x_trace_id: Optional[str] = Header(default=No
             if not per:
                 fb = _fallback_score(nf)
                 per = [{"kind": "fallback", "score": fb}]
+                primary_per = []
+                aux_per = []
+                ml_primary_score = float(fb)
+                ml_aux_score = None
+            else:
+                primary_per = [p for p in per if str(p.get("kind", "")).lower() in ML_PRIMARY_CORE_KINDS]
+                if not primary_per:
+                    primary_per = [p for p in per if str(p.get("kind", "")).lower() in SUPERVISED_NUMERIC_KINDS]
+                if not primary_per:
+                    primary_per = list(per)
+                aux_per = [p for p in per if str(p.get("kind", "")).lower() in ML_AUX_NOVELTY_KINDS]
+                ml_primary_score = _aggregate_scores(
+                    primary_per,
+                    method=ML_PRIMARY_ENSEMBLE_AGG,
+                    calibration=ML_ENSEMBLE_CALIB,
+                )
+                ml_aux_score = (
+                    _aggregate_scores(
+                        aux_per,
+                        method=ML_AUX_NOVELTY_AGG,
+                        calibration=ML_AUX_NOVELTY_CALIB,
+                    ) if aux_per else None
+                )
 
-            ml_score = _aggregate_scores(per)
+            ml_score = float(ml_primary_score)
+            ml_aux_thr = _effective_aux_novelty_threshold()
+            ml_aux_hit = bool((ml_aux_score is not None) and (float(ml_aux_score) >= float(ml_aux_thr)))
+            per_thr, per_hits, per_ratio = _per_model_threshold_diagnostics(per)
             out.append({
                 "hash_id": item.hash_id,
                 "per_model": per,
                 "ml_score": ml_score,
+                "ml_primary_score": ml_primary_score,
+                "ml_aux_novelty_score": ml_aux_score,
+                "ml_aux_novelty_threshold": ml_aux_thr,
+                "ml_aux_novelty_hit": ml_aux_hit,
                 "threshold": thr,
                 "threshold_hit": (ml_score >= thr),
+                "primary_model_scores": {p["kind"]: p["score"] for p in primary_per},
+                "aux_novelty_model_scores": {p["kind"]: p["score"] for p in aux_per},
+                "per_model_thresholds": per_thr,
+                "per_model_threshold_hits": per_hits,
+                "per_model_hit_ratio": per_ratio,
                 "used_models": [p["kind"] for p in per if p.get("kind") != "fallback"],
             })
         except Exception as e:
@@ -809,8 +1523,17 @@ def score_batch(inp: ScoreBatchIn, x_trace_id: Optional[str] = Header(default=No
                 "hash_id": item.hash_id,
                 "per_model": [{"kind": "fallback", "score": fb}],
                 "ml_score": fb,
+                "ml_primary_score": fb,
+                "ml_aux_novelty_score": None,
+                "ml_aux_novelty_threshold": _effective_aux_novelty_threshold(),
+                "ml_aux_novelty_hit": False,
                 "threshold": thr,
                 "threshold_hit": (fb >= thr),
+                "primary_model_scores": {},
+                "aux_novelty_model_scores": {},
+                "per_model_thresholds": {},
+                "per_model_threshold_hits": {},
+                "per_model_hit_ratio": None,
                 "used_models": [],
                 "meta": {"error": "exception_fallback"},
             })

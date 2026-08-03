@@ -1,0 +1,35 @@
+{
+  "note": "absolute-threshold diagnostic (not FPR-budget); shows A1 lowers zanbil scores but zeros SR-BH recall due to source collision",
+  "abs_thresholds": {
+    "0.05": {
+      "A1_zanbil_alert": 0.108,
+      "A1_srbh_recall": 0.000375,
+      "T05_zanbil_alert": 0.99825,
+      "T05_srbh_recall": 1.0
+    },
+    "0.1": {
+      "A1_zanbil_alert": 0.093125,
+      "A1_srbh_recall": 0.000375,
+      "T05_zanbil_alert": 0.99625,
+      "T05_srbh_recall": 0.999
+    },
+    "0.2": {
+      "A1_zanbil_alert": 0.051875,
+      "A1_srbh_recall": 0.00025,
+      "T05_zanbil_alert": 0.911125,
+      "T05_srbh_recall": 0.99425
+    },
+    "0.3": {
+      "A1_zanbil_alert": 0.0335,
+      "A1_srbh_recall": 0.00025,
+      "T05_zanbil_alert": 0.852375,
+      "T05_srbh_recall": 0.98725
+    },
+    "0.5": {
+      "A1_zanbil_alert": 0.02025,
+      "A1_srbh_recall": 0.000125,
+      "T05_zanbil_alert": 0.768125,
+      "T05_srbh_recall": 0.963875
+    }
+  }
+}

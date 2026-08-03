@@ -125,29 +125,31 @@
       "partial_norm_divisor": 3
     },
     "ssrf": {
+      "requires_rule_hit": true,
+      "match_fields": ["endpoint", "payload"],
       "strong": [
-        "(?i)(?:^|[?&])(url|target|callback|fetch|webhook|download|endpoint|redirect|image|src|proxy)\\s*=\\s*https?://",
-        "(?i)https?://(?:localhost|127\\.0\\.0\\.1|10\\.(?:[0-9]{1,3}\\.){2}[0-9]{1,3}|192\\.168\\.(?:[0-9]{1,3})\\.(?:[0-9]{1,3})|172\\.(?:1[6-9]|2[0-9]|3[0-1])\\.(?:[0-9]{1,3})\\.(?:[0-9]{1,3}))"
+        "(?i)(?:^|[?&])(url|target|callback|fetch|webhook|download|endpoint|redirect|proxy)\\s*=\\s*https?://(?:localhost|127\\.0\\.0\\.1|10\\.(?:[0-9]{1,3}\\.){2}[0-9]{1,3}|192\\.168\\.(?:[0-9]{1,3})\\.(?:[0-9]{1,3})|172\\.(?:1[6-9]|2[0-9]|3[0-1])\\.(?:[0-9]{1,3})\\.(?:[0-9]{1,3}))",
+        "(?i)https?://(?:169\\.254\\.169\\.254|metadata\\.googleinternal|metadata/instance)"
       ],
       "partial_tokens": [
-        "http://",
-        "https://",
-        "localhost",
-        "127.0.0.1",
-        "10.",
-        "192.168.",
-        "172.16.",
-        "172.17.",
-        "172.18.",
-        "172.19.",
+        "url=http://",
+        "url=https://",
+        "target=http://",
+        "target=https://",
+        "redirect=http://",
+        "redirect=https://",
+        "callback=http://",
+        "callback=https://",
+        "webhook=http://",
+        "webhook=https://",
         "kubernetes.default.svc",
         "unix:/",
         "docker.sock",
         "file://",
         "gopher://"
       ],
-      "min_hits": 2,
-      "partial_norm_divisor": 4
+      "min_hits": 3,
+      "partial_norm_divisor": 5
     },
     "api_key_exposure": {
       "strong": [
@@ -305,9 +307,10 @@
       "partial_norm_divisor": 3
     },
     "ssrf_sensitive": {
+      "requires_rule_hit": true,
+      "match_fields": ["endpoint", "payload"],
       "strong": [
         "(?i)169\\.254\\.169\\.254",
-        "(?i)169\\.254",
         "(?i)metadata/instance",
         "(?i)metadata.google.internal"
       ],
@@ -315,7 +318,12 @@
         "169.254",
         "metadata",
         "instance-id",
-        "openstack"
+        "openstack",
+        "192.168.",
+        "172.16.",
+        "172.17.",
+        "172.18.",
+        "172.19."
       ],
       "min_hits": 1,
       "partial_norm_divisor": 2

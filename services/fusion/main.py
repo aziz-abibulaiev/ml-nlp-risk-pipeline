@@ -13,11 +13,15 @@ from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-FUSION_ALPHA = float(os.getenv("FUSION_ALPHA", os.getenv("ALPHA", "0.6")))
-FUSION_BETA  = float(os.getenv("FUSION_BETA",  os.getenv("BETA",  "0.4")))
+FUSION_ALPHA = float(os.getenv("FUSION_ALPHA", os.getenv("ALPHA", "0.2")))
+FUSION_BETA  = float(os.getenv("FUSION_BETA",  os.getenv("BETA",  "0.8")))
 FUSION_MODE  = os.getenv("FUSION_MODE", os.getenv("MODE", "weighted")).lower()
 FUSION_THR   = float(os.getenv("FUSION_FINAL_THR", os.getenv("THETA", "0.7")))
 FUSION_MAX_SCORES = int(os.getenv("FUSION_MAX_SCORES", "16"))
+FUSION_NOVELTY_AUX_ENABLED = os.getenv("FUSION_NOVELTY_AUX_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+FUSION_NOVELTY_AUX_BUMP = float(os.getenv("FUSION_NOVELTY_AUX_BUMP", "0.08"))
+FUSION_NOVELTY_AUX_CAP = float(os.getenv("FUSION_NOVELTY_AUX_CAP", "0.15"))
+FUSION_NOVELTY_AUX_USE_HIT = os.getenv("FUSION_NOVELTY_AUX_USE_HIT", "true").lower() in ("1", "true", "yes", "on")
 
 RISK_MODE = os.getenv("FUSION_RISK_MODE", "score_only").lower()
 IMPACT_POLICY_PATH = os.getenv("IMPACT_POLICY_FILE", "/app/policies/impact_policy.json")
@@ -59,6 +63,8 @@ FUSION_DEC = Counter('fusion_decisions_total', 'Decisions by level/anomaly', ['l
 FUSION_OVR = Counter('fusion_topic_overrides_total', 'Topic overrides applied', ['level','topic'])
 FUSION_HLD = Counter('fusion_hysteresis_holds_total', 'Hysteresis holds by level', ['held_level'])
 FUSION_STATE = Gauge('fusion_hysteresis_state_size', 'Items in hysteresis state')
+
+NO_RISK_THR = float(os.getenv("FUSION_NO_RISK_THR", "0.3"))
 
 Score = Annotated[float, Field(ge=0.0, le=1.0)]
 ScoreList = Annotated[List[Score], Field(min_length=0)]
@@ -210,14 +216,29 @@ def _impact_bin(v: float) -> int:
     return 0
 
 def risk_level_from_score_only(s: float) -> str:
-    if s >= L_HIGH: return "critical"
-    if s >= L_MED:  return "high"
-    if s >= L_LOW:  return "medium"
-    if s > 0.0:     return "low"
-    return "normal"
+    if s <= NO_RISK_THR:
+        return "no_risk"
+
+    if s >= LVL_CRIT:
+        return "critical"
+    if s >= LVL_HIGH:
+        return "high"
+    if s >= LVL_MED:
+        return "medium"
+    if s >= LVL_LOW:
+        return "medium"  # з твоїми дефолтами LVL_LOW=0.3, діапазон залишиться як був
+
+    # теоретично, якщо NO_RISK_THR < LVL_LOW – тут будуть "low"
+    return "low"
 
 def risk_level_from_matrix(s: float, ctx: dict, topics: list[dict]) -> str:
+    if s <= 0.0:
+        return "normal"
+      
     ci = _conf_bin(s)
+    if ci == 0:
+        return risk_level_from_score_only(s)
+      
     ii = _impact_bin(_impact_score(ctx, topics))
     mx = _IMPACT.get("matrix") or []
     try:
@@ -295,11 +316,7 @@ def _gap_confidence(vals: List[float]) -> float:
     return float(min(max(gap * 2.0, 0.0), 1.0))
 
 def _risk_level(score: float) -> str:
-    if score >= LVL_CRIT: return "critical"
-    if score >= LVL_HIGH: return "high"
-    if score >= LVL_MED:  return "medium"
-    if score >= LVL_LOW:  return "low"
-    return "normal"
+    return risk_level_from_score_only(score)
 
 def _topic_overrides(topics: List[Dict[str, float]]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     if TOPIC_ESCALATION == "disabled":
@@ -443,15 +460,21 @@ def ready():
             "mode": FUSION_MODE, "threshold": FUSION_THR,
             "levels": {"low": LVL_LOW, "medium": LVL_MED, "high": LVL_HIGH, "critical": LVL_CRIT},
             "topic_strong": TOPIC_STRONG,
-            "hysteresis": {
-                "enabled": HYST_ENABLED,
-                "margin": HYST_MARGIN,
-                "up_margin": HYST_UP_MARGIN,
-                "key_field": HYST_KEY_FIELD,
-                "ttl": HYST_TTL,
+                "hysteresis": {
+                    "enabled": HYST_ENABLED,
+                    "margin": HYST_MARGIN,
+                    "up_margin": HYST_UP_MARGIN,
+                    "key_field": HYST_KEY_FIELD,
+                    "ttl": HYST_TTL,
+                },
+                "novelty_aux": {
+                    "enabled": FUSION_NOVELTY_AUX_ENABLED,
+                    "bump": FUSION_NOVELTY_AUX_BUMP,
+                    "cap": FUSION_NOVELTY_AUX_CAP,
+                    "use_hit": FUSION_NOVELTY_AUX_USE_HIT,
+                },
             }
         }
-    }
 
 @app.get("/policy")
 def policy():
@@ -468,6 +491,12 @@ def policy():
             "up_margin": HYST_UP_MARGIN,
             "key_field": HYST_KEY_FIELD,
             "ttl": HYST_TTL,
+        },
+        "novelty_aux": {
+            "enabled": FUSION_NOVELTY_AUX_ENABLED,
+            "bump": FUSION_NOVELTY_AUX_BUMP,
+            "cap": FUSION_NOVELTY_AUX_CAP,
+            "use_hit": FUSION_NOVELTY_AUX_USE_HIT,
         },
         "version": app.version,
     }
@@ -534,10 +563,38 @@ async def fuse(
             agg_nlp = _aggregate(nlp_scores, "max")
 
             # Policy
-            mode  = (inp.policy.mode or FUSION_MODE).lower()
-            alpha = float(inp.policy.alpha)
-            beta  = float(inp.policy.beta)
-            thr   = float(inp.policy.threshold_final)
+            mode = (inp.policy.mode or FUSION_MODE).lower()
+
+            if inp.policy.threshold_final is not None:
+                thr = float(inp.policy.threshold_final)
+            else:
+                thr = float(FUSION_THR)
+
+            if inp.policy.alpha is not None:
+                alpha = float(inp.policy.alpha)
+            else:
+                alpha = float(FUSION_ALPHA)
+
+            if inp.policy.beta is not None:
+                beta = float(inp.policy.beta)
+            else:
+                beta = float(FUSION_BETA)
+
+            # Context-aware bump for low-impact public/generic traffic
+            ctx = inp.context if isinstance(inp.context, dict) else {}
+
+            exposure = str(ctx.get("exposure", "public")).lower()
+            data_cls = str(ctx.get("data_class", "none")).lower()
+            blast = str(ctx.get("blast", "low")).lower()
+
+            low_impact = (
+                exposure == "public"
+                and data_cls in ("generic", "contact", "none")
+                and blast == "low"
+            )
+
+            if low_impact and thr < 0.85:
+                thr = 0.85
 
             used_fallback = False
 
@@ -561,8 +618,49 @@ async def fuse(
                 alpha, beta = a, b
                 used_fallback = True
 
+            novelty_aux_bump = 0.0
+            novelty_aux_reason = None
+            if FUSION_NOVELTY_AUX_ENABLED and isinstance(ctx, dict):
+                aux_score_raw = ctx.get("ml_aux_novelty_score")
+                aux_thr_raw = ctx.get("ml_aux_novelty_threshold")
+                aux_hit_raw = ctx.get("ml_aux_novelty_hit")
+                try:
+                    aux_score = float(aux_score_raw) if aux_score_raw is not None else None
+                except Exception:
+                    aux_score = None
+                try:
+                    aux_thr = float(aux_thr_raw) if aux_thr_raw is not None else None
+                except Exception:
+                    aux_thr = None
+
+                aux_trigger = False
+                if aux_score is not None:
+                    if FUSION_NOVELTY_AUX_USE_HIT and isinstance(aux_hit_raw, bool):
+                        aux_trigger = bool(aux_hit_raw)
+                    elif aux_thr is not None:
+                        aux_trigger = bool(aux_score >= aux_thr)
+                    else:
+                        aux_trigger = bool(aux_score >= 0.8)
+
+                if aux_trigger and aux_score is not None:
+                    if aux_thr is not None and 0.0 <= aux_thr < 1.0:
+                        over = max(aux_score - aux_thr, 0.0)
+                        denom = max(1.0 - aux_thr, 1e-6)
+                        strength = min(max(over / denom, 0.0), 1.0)
+                    else:
+                        strength = min(max(aux_score, 0.0), 1.0)
+
+                    bump = max(0.0, float(FUSION_NOVELTY_AUX_BUMP)) * float(strength)
+                    bump = min(bump, max(0.0, float(FUSION_NOVELTY_AUX_CAP)))
+                    if bump > 0.0:
+                        novelty_aux_bump = bump
+                        final = min(1.0, float(final + novelty_aux_bump))
+                        novelty_aux_reason = (
+                            f"aux_novelty_bump={novelty_aux_bump:.3f}"
+                            f"(score={aux_score:.3f},thr={aux_thr if aux_thr is not None else 'na'})"
+                        )
+
             # 1) Extract topics from context
-            ctx = inp.context if isinstance(inp.context, dict) else {}
             topics_any = ctx.get("topics") or ctx.get("nlp_topics") or []
             topics = topics_any if isinstance(topics_any, list) else []
 
@@ -589,6 +687,7 @@ async def fuse(
             min_level, override_reason, override_topic = (None, None, None)
             if topics:
                 min_level, override_reason, override_topic = _topic_overrides(topics)
+            
 
             # 4) Final level = base_level with overrides
             risk_level = base_level
@@ -614,11 +713,20 @@ async def fuse(
             if int(now) % 17 == 0:
                 _cleanup_state(now)
 
-            is_anom = bool(final >= thr or override is not None)
+            if low_impact:
+                is_anom = final >= thr
+            else:
+                is_anom = bool(
+                    final >= thr or
+                    (override is not None and risk_level in ("high", "critical"))
+                )
+
             reasons = _reasons(
                 final, thr, mode, agg_ml, agg_nlp, alpha, beta,
                 (override or override_reason), hyst_reason
             )
+            if novelty_aux_reason:
+                reasons.append(novelty_aux_reason)
             if is_anom:
                 reasons.append("anomaly_reason=" + ("threshold" if final >= thr else "topic_escalation"))
             # Log

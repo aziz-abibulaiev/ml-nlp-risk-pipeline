@@ -30,19 +30,40 @@ services:
       - -lc
       - |
         set -e
-        ML_NUM_PATH="/data/ml_numeric.csv"
+        ML_TRAIN_PATH="/data/ml_train.csv"
+        ML_VALIDATION_PATH="/data/ml_validation.csv"
+        ML_TEST_PATH="/data/ml_test.csv"
+        ML_SUPERVISED_TRAIN_PATH="/data/ml_supervised_train.csv"
+        OCSVM_EXTRA_PATH="/data/ml_ocsvm_train_extra.csv"
         NLP_TRAIN_PATH="/data/nlp_train.csv"
+        REBUILT_SPLITS=0
 
-        if [ ! -f "$$ML_NUM_PATH" ]; then
-          echo "[retrain CMD] ml_numeric not found at $$ML_NUM_PATH, building from Kaggle..."
-          echo "[retrain CMD] building ml_numeric from attack-lab dataset..."
-          python -u jobs/retrain/build_ml_numeric_attacklab.py
+        if [ ! -f "$$ML_VALIDATION_PATH" ] || [ ! -f "$$ML_TEST_PATH" ] || [ ! -f "$$OCSVM_EXTRA_PATH" ] || [ ! -f "$$ML_SUPERVISED_TRAIN_PATH" ]; then
+          echo "[retrain CMD] required files missing (val=$$ML_VALIDATION_PATH test=$$ML_TEST_PATH extra=$$OCSVM_EXTRA_PATH sup=$$ML_SUPERVISED_TRAIN_PATH)"
+          echo "[retrain CMD] building CSIC splits for calibration/test + supervised_train..."
+          ML_VALIDATION_FILE="$$ML_VALIDATION_PATH" ML_TEST_FILE="$$ML_TEST_PATH" ML_SUPERVISED_TRAIN_FILE="$$ML_SUPERVISED_TRAIN_PATH" python -u jobs/retrain/build_ml_numeric_from_csic.py --override
 
-          echo "[retrain CMD] merging CSIC dataset into ml_numeric..."
-          python -u jobs/retrain/build_ml_numeric_from_csic.py
+          echo "[retrain CMD] appending AttackLab attack-only slices to calibration/test..."
+          ML_NUM_FILE="$$ML_TRAIN_PATH" ML_VALIDATION_FILE="$$ML_VALIDATION_PATH" ML_TEST_FILE="$$ML_TEST_PATH" python -u jobs/retrain/build_ml_numeric_attacklab.py --attacklab-only
+          REBUILT_SPLITS=1
         else
-          echo "[retrain CMD] ml_numeric already exists at $$ML_NUM_PATH, skipping build scripts"
+          echo "[retrain CMD] ml_validation/ml_test/ml_supervised_train already exist, skipping build scripts"
         fi
+
+        if [ ! -f "$$ML_TRAIN_PATH" ] || [ "$$REBUILT_SPLITS" = "1" ]; then
+          echo "[retrain CMD] preparing ml_train (path=$$ML_TRAIN_PATH)"
+          if [ "$$REBUILT_SPLITS" = "1" ] && [ -f "$$ML_TRAIN_PATH" ]; then
+            echo "[retrain CMD] val/test were rebuilt; rebuilding ml_train to keep pattern-disjointness..."
+          fi
+          echo "[retrain CMD] building ml_train benign mix (mahendra + csic benign), disjoint from val/test..."
+          ML_NUM_FILE="$$ML_TRAIN_PATH" python -u jobs/retrain/build_ml_numeric_attacklab.py --train-only --override-train
+        else
+          echo "[retrain CMD] ml_train already exists at $$ML_TRAIN_PATH, skipping train build"
+        fi
+
+        echo "[retrain CMD] cleaning generated retrain artifacts in /models/ml (preserve ml_config.json)..."
+        mkdir -p /models/ml
+        find /models/ml -mindepth 1 -maxdepth 1 -type f ! -name "ml_config.json" -delete
 
         if [ ! -f "$$NLP_TRAIN_PATH" ]; then
           echo "[retrain CMD] nlp_train not found at $$NLP_TRAIN_PATH, building from Kaggle..."
@@ -64,10 +85,105 @@ services:
       NLP_TFIDF_LR_PATH: /models/nlp/nlp_tfidf_lr.joblib
       NLP_CHAR_SGD_PATH: /models/nlp/nlp_char_sgd.joblib
       NLP_TRAIN_FILE: "/data/nlp_train.csv"
-      ML_NUM_FILE: "/data/ml_numeric.csv"
+      ML_NUM_FILE: "/data/ml_train.csv"
+      ML_TRAIN_FILE: "/data/ml_train.csv"
+      ML_VALIDATION_FILE: "/data/ml_validation.csv"
+      ML_TEST_FILE: "/data/ml_test.csv"
+      ML_SUPERVISED_TRAIN_FILE: "/data/ml_supervised_train.csv"
+      RETRAIN_ENABLE_TEST_EVAL: "true"
+      ML_AUTO_SPLIT_VAL_FOR_TEST: "false"
+      ML_VAL_TEST_SPLIT: "0.2"
+      ML_EVAL_SHUFFLE: "true"
+      ML_SPLIT_GROUP_BY_FEATURES: "true"
+      ML_SPLIT_GROUP_INCLUDE_LABEL: "false"
+      ML_SOURCE_HOLDOUT_ENABLED: "false"
+      ML_SOURCE_HOLDOUT_STRICT: "false"
+      ML_SOURCE_HOLDOUT_COLUMN: "source"
+      ML_SOURCE_HOLDOUT_SOURCE: "csic"
+      ML_SOURCE_HOLDOUT_MIN_ROWS: "1000"
+      ML_NUM_MAX_ATTACK_FRAC: "0.001"
+      ML_VAL_MAX_ROWS: "300000"
+      ML_TEST_MAX_ROWS: "200000"
+      ML_THRESHOLD_POLICY: "fpr_budget"
+      ML_TARGET_FPR: "0.05"
+      ML_PRIMARY_CORE_KINDS: "sup_hgb,sup_rf,sup_et"
+      ML_AUX_NOVELTY_KINDS: "if,ocsvm,ae,lstm_ae"
+      ML_PRIMARY_ENSEMBLE_AGG: "mean_logit"
+      ML_AUX_NOVELTY_AGG: "mean_logit"
+      ML_BOOTSTRAP_CI_ENABLED: "true"
+      ML_BOOTSTRAP_CI_SAMPLES: "500"
+      ML_BOOTSTRAP_CI_ALPHA: "0.05"
+      ML_BOOTSTRAP_CI_MAX_ROWS: "50000"
+      ML_BOOTSTRAP_CI_RANDOM_STATE: "42"
+      # Optional deployment attack prior for probability correction.
+      # Set to -1 to disable, or to (0,1) for odds correction (e.g., 0.05).
+      ML_DEPLOY_ATTACK_PRIOR: "0.05"
+      # Main ID protocol: train anomaly models on the same benign domain (CSIC)
+      # used for calibration/test to avoid domain-shift artifacts.
+      MAHENDRA_TRAIN_ROWS: "30000"
+      CSIC_VAL_BENIGN_ROWS: "4000"
+      CSIC_VAL_BENIGN_OFFSET: "0"
+      # CSIC is the primary attack source for calibration/test (target ~80/20 benign/attack).
+      CSIC_VAL_ATTACK_ROWS: "1000"
+      CSIC_VAL_ATTACK_OFFSET: "0"
+      CSIC_TEST_BENIGN_ROWS: "8000"
+      CSIC_TEST_BENIGN_OFFSET: "4000"
+      CSIC_TEST_ATTACK_ROWS: "2000"
+      CSIC_TEST_ATTACK_OFFSET: "1000"
+      CSIC_OCSVM_BENIGN_ROWS: "8000"
+      CSIC_OCSVM_BENIGN_OFFSET: "0"
+      CSIC_TRAIN_BENIGN_ROWS: "36000"
+      CSIC_TRAIN_BENIGN_OFFSET: "0"
+      OCSVM_EXTRA_BENIGN_FILE: "/data/ml_ocsvm_train_extra.csv"
+      OCSVM_EXTRA_BENIGN_MAX_ROWS: "8000"
+      # AttackLab is used as OOD test-only source (not for calibration).
+      ATTACKLAB_VAL_ATTACK_ROWS: "0"
+      ATTACKLAB_VAL_ATTACK_OFFSET: "0"
+      # Single-domain default: keep AttackLab disabled in main test.
+      # Enable it only for separate OOD robustness runs.
+      ATTACKLAB_TEST_ATTACK_ROWS: "0"
+      ATTACKLAB_TEST_ATTACK_OFFSET: "20000"
+      ATTACKLAB_HTTP_ONLY: "true"
+      ATTACKLAB_STRATIFIED_SELECTION: "true"
+      ATTACKLAB_MAX_DUP_PER_PATTERN_SPLIT: "1"
+      ATTACKLAB_RELAX_DUP_CAP_FILL: "false"
+      ATTACKLAB_UNIQUE_PATTERNS_ONLY: "true"
+      ATTACKLAB_POOL_MULTIPLIER: "80"
+      ATTACKLAB_POOL_MIN_ROWS: "50000"
+      ML_ENFORCE_VAL_TEST_DISJOINT: "true"
+      CSIC_SUPERVISED_EXCLUDE_VAL_TEST: "true"
+      CSIC_SUPERVISED_EXCLUDE_MODE: "pattern"
+      CSIC_SUPERVISED_REQUIRE_BOTH_CLASSES: "true"
+      ML_DUP_GROUP_ROUND_DECIMALS: "6"
+      ML_DATASET_SHUFFLE_SEED: "42"
+      OCSVM_SCALER: "standard"
+      OCSVM_NU: "0.15"
+      OCSVM_GAMMA: "scale"
+      OCSVM_ROBUST_Q_LOW: "5"
+      OCSVM_ROBUST_Q_HIGH: "95"
+      IF_TUNE_ENABLED: "true"
+      IF_N_ESTIMATORS_GRID: "200,400,800"
+      IF_MAX_SAMPLES_GRID: "0.8,1.0"
+      IF_MAX_FEATURES_GRID: "0.6,1.0"
+      IF_BOOTSTRAP_GRID: "false"
+      # Keep benign train diverse for anomaly models (AE/LSTM/IF/OCSVM):
+      # too many identical templates collapse score granularity.
+      ML_NUM_MAX_DUP_PER_PATTERN_BENIGN: "5"
+      ML_NUM_MAX_DUP_PER_PATTERN_ATTACK: "0"
+      TRAIN_ENFORCE_DISJOINT_WITH_VAL_TEST: "true"
+      TRAIN_DISJOINT_MODE: "row"
+      TRAIN_SOURCE_BALANCE_ENABLED: "true"
+      TRAIN_SOURCE_MAX_RATIO: "2.0"
+      # For scientific evaluation keep calibration/test as-is (no deduplication).
+      ML_VAL_MAX_DUP_PER_PATTERN_BENIGN: "0"
+      ML_VAL_MAX_DUP_PER_PATTERN_ATTACK: "0"
+      ANOM_PROB_EPS: "1e-12"
+      ANOM_LOGIT_C: "1.0"
+      ANOM_LOGIT_C_GRID: "0.1,0.5,1,2,5,10,20,50"
+      ANOM_LOGIT_CV_HOLDOUT: "0.2"
       TRAIN_TARGET: "all"
       LOG_LEVEL: "INFO"
-      FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code"
+      FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code,query_len,query_entropy,query_value_len_mean,query_value_len_max,empty_query_value_ratio,path_entropy,path_digit_ratio,path_upper_ratio,body_len,body_entropy,body_digit_ratio,body_punct_ratio,pct_encoded_ratio,header_value_total_len,header_value_max_len"
     volumes:
       - ./data:/data
       - ./models:/models
@@ -103,17 +219,17 @@ services:
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
     volumes:
       - ./rules:/app/rules:ro
   ml-inference:
     build:
       context: .
       dockerfile: services/ml_infer/Dockerfile
-    container_name: ml-inference
     restart: unless-stopped
     command:
       - gunicorn
@@ -121,7 +237,7 @@ services:
       - -k
       - uvicorn.workers.UvicornWorker
       - -w
-      - "${GUNICORN_WORKERS:-2}"
+      - "${ML_GUNICORN_WORKERS:-1}"
       - -b
       - 0.0.0.0:8000
       - --timeout
@@ -133,30 +249,35 @@ services:
       - --access-logformat
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     environment:
-      LOG_LEVEL: "DEBUG"
-      ML_THRESHOLD: "0.7"
+      LOG_LEVEL: "INFO"
       PRELOAD_MODELS: "true"
-      FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code"
+      ANOM_PROB_EPS: "1e-12"
+      FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code,query_len,query_entropy,query_value_len_mean,query_value_len_max,empty_query_value_ratio,path_entropy,path_digit_ratio,path_upper_ratio,body_len,body_entropy,body_digit_ratio,body_punct_ratio,pct_encoded_ratio,header_value_total_len,header_value_max_len"
       MODEL_PATH_IF: "/models/ml/if_model.joblib"
       MODEL_PATH_OCSVM: "/models/ml/ocsvm_model.joblib"
       MODEL_PATH_AE: "/models/ml/ae_model.joblib"
       MODEL_PATH_LSTM_AE: "/models/ml/lstm_ae_model.joblib"
+      ML_PRIMARY_CORE_KINDS: "sup_hgb,sup_rf,sup_et"
+      ML_AUX_NOVELTY_KINDS: "if,ocsvm,ae,lstm_ae"
+      ML_PRIMARY_ENSEMBLE_AGG: "mean_logit"
+      ML_AUX_NOVELTY_AGG: "mean_logit"
     volumes:
       - ./models:/models:ro
+      - ./policies/impact_policy.json:/app/policies/impact_policy.json:ro
     # depends_on:
     #   retrain:
     #     condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys,json; r=urllib.request.urlopen('http://localhost:8000/ready'); sys.exit(0 if r.status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
   nlp-inference:
     build:
       context: .
       dockerfile: services/nlp_infer/Dockerfile
-    container_name: nlp-inference
     restart: unless-stopped
     command:
       - gunicorn
@@ -164,7 +285,7 @@ services:
       - -k
       - uvicorn.workers.UvicornWorker
       - -w
-      - "${GUNICORN_WORKERS:-2}"
+      - "${NLP_GUNICORN_WORKERS:-1}"
       - -b
       - 0.0.0.0:8000
       - --timeout
@@ -178,6 +299,7 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       NLP_THRESHOLD: "0.60"
+      NLP_LOAD_PER_ATTACK_MODELS: "true"
       NLP_TFIDF_LR_PATH: "/models/nlp/nlp_tfidf_lr.joblib"
       NLP_CHAR_SGD_PATH: "/models/nlp/nlp_char_sgd.joblib"
     volumes:
@@ -188,10 +310,38 @@ services:
     #     condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/ready').status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
+  compose-autoscaler:
+    image: docker:27-cli
+    restart: unless-stopped
+    working_dir: "${HOST_PROJECT_DIR:-/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline}"
+    command:
+      - sh
+      - "${HOST_PROJECT_DIR:-/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline}/scripts/compose-autoscale.sh"
+    environment:
+      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME:-ml-nlp-risk-pipeline}"
+      PROJECT_DIR: "${HOST_PROJECT_DIR:-/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline}"
+      COMPOSE_FILE_PATH: "${HOST_PROJECT_DIR:-/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline}/docker-compose.yaml"
+      AUTOSCALE_INTERVAL_SEC: "30"
+      AUTOSCALE_CPU_UP_PCT: "75"
+      AUTOSCALE_CPU_DOWN_PCT: "25"
+      AUTOSCALE_COOLDOWN_CYCLES: "2"
+      ML_MIN_REPLICAS: "1"
+      ML_MAX_REPLICAS: "3"
+      NLP_MIN_REPLICAS: "1"
+      NLP_MAX_REPLICAS: "3"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - "${HOST_PROJECT_DIR:-/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline}:${HOST_PROJECT_DIR:-/Users/azizabibulaev/Desktop/Projects/ml-nlp-risk-pipeline}:ro"
+    depends_on:
+      ml-inference:
+        condition: service_started
+      nlp-inference:
+        condition: service_started
   fusion:
     build:
       context: .
@@ -218,10 +368,16 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
-      FUSION_MODE: "weighted_adaptive"
+      FUSION_MODE: "weighted"
+      FUSION_ALPHA: "0.2" # ml score weight
+      FUSION_BETA: "0.8" # nlp score weight
       FUSION_LEVELS: "0.3,0.5,0.6,0.8"
       FUSION_TOPIC_STRONG: "0.7"
       FUSION_FINAL_THR: "0.55"
+      FUSION_NOVELTY_AUX_ENABLED: "true"
+      FUSION_NOVELTY_AUX_BUMP: "0.08"
+      FUSION_NOVELTY_AUX_CAP: "0.15"
+      FUSION_NOVELTY_AUX_USE_HIT: "true"
       FUSION_TOPIC_ESCALATION: "disabled" # "all_high" | "all_critical" | "list" | "disabled"
       HYST_ENABLED: "0"
       HYST_MARGIN: "0.07"
@@ -235,10 +391,11 @@ services:
       - ./policies/impact_policy.json:/app/policies/impact_policy.json:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
     depends_on:
       redis:
         condition: service_healthy
@@ -248,9 +405,10 @@ services:
     container_name: redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
+      interval: 30m
       timeout: 5s
-      start_period: 5s
+      start_period: 5m
+      start_interval: 15s
       retries: 10
   alerting:
     build:
@@ -305,10 +463,11 @@ services:
       SERVICENOW_PASS: ""
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
     depends_on:
       opensearch:
         condition: service_healthy
@@ -359,10 +518,11 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
     volumes:
       - ./tests:/app/tests:ro
   ingestion:
@@ -400,10 +560,11 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
-      interval: 60s
-      timeout: 2s
+      interval: 30m
+      timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 5m
+      start_interval: 15s
   opensearch:
     image: opensearchproject/opensearch:3.3.2
     container_name: opensearch
@@ -426,10 +587,11 @@ services:
       - "9200:9200"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 3s
+      interval: 30m
+      timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 5m
+      start_interval: 15s
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:3.3.0
     container_name: opensearch-dashboards
@@ -443,10 +605,11 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:5601/api/status || exit 1"]
-      interval: 30s
-      timeout: 3s
+      interval: 30m
+      timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 5m
+      start_interval: 15s
 
 volumes:
   opensearch-data:
