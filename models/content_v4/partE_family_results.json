@@ -1,0 +1,64 @@
+{
+  "n_sample": 100,
+  "llm_rubric": "Read the fixed-point-decoded HTTP request; assign one dominant attack family from {sqli,xss,cmd_injection,ssti,path_traversal,ssrf,scan,other} by the first/strongest attack marker (see part_e_family.py header for the marker map).",
+  "llm_family_distribution": {
+    "sqli": 51,
+    "ssrf": 14,
+    "cmd_injection": 8,
+    "path_traversal": 8,
+    "other": 8,
+    "ssti": 6,
+    "scan": 5
+  },
+  "llm_vs_regex_agreement": {
+    "agreement_rate": 0.9298245614035088,
+    "n_regex_fired": 57,
+    "note": "automated cross-check (LLM vs detection regex); independent HUMAN review pending (author) \u2014 not claimed here"
+  },
+  "family_head_on_real": {
+    "note": "LLM-assigned, regex-cross-checked, N=100, human review pending \u2014 NOT clean ground truth. Family head is TASK-05 testbed-trained.",
+    "overall_accuracy": 0.2,
+    "per_family": {
+      "cmd_injection": {
+        "support_llm": 8,
+        "precision": null,
+        "recall": 0.0
+      },
+      "nosql_injection": {
+        "support_llm": 0,
+        "precision": 0.0,
+        "recall": null
+      },
+      "other": {
+        "support_llm": 8,
+        "precision": null,
+        "recall": 0.0
+      },
+      "path_traversal": {
+        "support_llm": 8,
+        "precision": null,
+        "recall": 0.0
+      },
+      "scan": {
+        "support_llm": 5,
+        "precision": 0.0684931506849315,
+        "recall": 1.0
+      },
+      "sqli": {
+        "support_llm": 51,
+        "precision": 1.0,
+        "recall": 0.29411764705882354
+      },
+      "ssrf": {
+        "support_llm": 14,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "ssti": {
+        "support_llm": 6,
+        "precision": null,
+        "recall": 0.0
+      }
+    }
+  }
+}
