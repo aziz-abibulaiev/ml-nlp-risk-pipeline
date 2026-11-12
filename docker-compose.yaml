@@ -1,7 +1,8 @@
+name: ${COMPOSE_PROJECT_NAME:-mlnlp}
+
 services:
   os-init:
     image: curlimages/curl:8.4.0
-    container_name: os-init
     depends_on:
       opensearch:
         condition: service_healthy
@@ -24,7 +25,6 @@ services:
     build:
       context: .
       dockerfile: services/retrain/Dockerfile
-    container_name: retrain
     command:
       - sh
       - -lc
@@ -76,13 +76,12 @@ services:
     build: 
       context: .
       dockerfile: services/preprocess/Dockerfile
-    container_name: preprocess
     restart: unless-stopped
     environment:
       LOG_LEVEL: "INFO"
       MAX_EVENT_BYTES: "2000000"
       MAX_TEXT_BYTES: "20000"
-      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+      ORCH_TOKEN: "${ORCH_TOKEN:?set ORCH_TOKEN in .env}"
       PREPROC_ENV: "prod"
     command:
       - gunicorn
@@ -113,7 +112,6 @@ services:
     build:
       context: .
       dockerfile: services/ml_infer/Dockerfile
-    container_name: ml-inference
     restart: unless-stopped
     command:
       - gunicorn
@@ -134,7 +132,8 @@ services:
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     environment:
       LOG_LEVEL: "DEBUG"
-      ML_THRESHOLD: "0.7"
+      ML_THRESHOLD: "${ML_THRESHOLD:-0.996542}"
+      ML_AGGREGATE: "${ML_AGGREGATE:-max}"
       PRELOAD_MODELS: "true"
       FEATURE_ORDER: "endpoint_len,header_count,payload_size,headers_entropy,query_param_count,path_depth,suspicious_char_ratio,is_json_payload,http_method_code"
       MODEL_PATH_IF: "/models/ml/if_model.joblib"
@@ -142,7 +141,7 @@ services:
       MODEL_PATH_AE: "/models/ml/ae_model.joblib"
       MODEL_PATH_LSTM_AE: "/models/ml/lstm_ae_model.joblib"
     volumes:
-      - ./models:/models:ro
+      - ${MODELS_DIR:-./models}:/models:ro
     # depends_on:
     #   retrain:
     #     condition: service_completed_successfully
@@ -156,7 +155,6 @@ services:
     build:
       context: .
       dockerfile: services/nlp_infer/Dockerfile
-    container_name: nlp-inference
     restart: unless-stopped
     command:
       - gunicorn
@@ -177,11 +175,11 @@ services:
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     environment:
       LOG_LEVEL: "INFO"
-      NLP_THRESHOLD: "0.60"
+      NLP_THRESHOLD: "${NLP_THRESHOLD:-0.343929}"
       NLP_TFIDF_LR_PATH: "/models/nlp/nlp_tfidf_lr.joblib"
       NLP_CHAR_SGD_PATH: "/models/nlp/nlp_char_sgd.joblib"
     volumes:
-      - ./models:/models:ro
+      - ${MODELS_DIR:-./models}:/models:ro
       - ./rules:/app/rules:ro 
     # depends_on:
     #   retrain:
@@ -196,7 +194,6 @@ services:
     build:
       context: .
       dockerfile: services/fusion/Dockerfile
-    container_name: fusion
     restart: unless-stopped
     command:
       - gunicorn
@@ -217,13 +214,16 @@ services:
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     environment:
       LOG_LEVEL: "INFO"
-      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
-      FUSION_MODE: "weighted_adaptive"
-      FUSION_LEVELS: "0.3,0.5,0.6,0.8"
+      ORCH_TOKEN: "${ORCH_TOKEN:?set ORCH_TOKEN in .env}"
+      FUSION_MODE: "${FUSION_MODE:-weighted}"
+      FUSION_ALPHA: "${FUSION_ALPHA:-1.0}"
+      FUSION_BETA: "${FUSION_BETA:-0.0}"
+      FUSION_LEVELS: "${FUSION_LEVELS:-0.997392,1.0,1.0,1.0}"
+      FUSION_NORMAL_THR: "${FUSION_NORMAL_THR:-0.886486}"
       FUSION_TOPIC_STRONG: "0.7"
       FUSION_FINAL_THR: "0.55"
       FUSION_TOPIC_ESCALATION: "disabled" # "all_high" | "all_critical" | "list" | "disabled"
-      HYST_ENABLED: "0"
+      HYST_ENABLED: "${HYST_ENABLED:-1}"
       HYST_MARGIN: "0.07"
       HYST_UP_MARGIN: "0.02"
       HYST_KEY_FIELD: "hkey"
@@ -232,7 +232,7 @@ services:
       FUSION_RISK_MODE: "score_x_impact"
       IMPACT_POLICY_FILE: "/app/policies/impact_policy.json"
     volumes:
-      - ./policies/impact_policy.json:/app/policies/impact_policy.json:ro
+      - ${IMPACT_POLICY_HOST:-./policies/impact_policy.json}:/app/policies/impact_policy.json:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
       interval: 60s
@@ -245,7 +245,6 @@ services:
   redis:
     image: redis:7-alpine
     command: ["redis-server","--save","", "--appendonly","no"]
-    container_name: redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -256,7 +255,6 @@ services:
     build:
       context: .
       dockerfile: services/alerting/Dockerfile
-    container_name: alerting
     restart: unless-stopped
     command:
       - gunicorn
@@ -277,7 +275,7 @@ services:
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     environment:
       LOG_LEVEL: "INFO"
-      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+      ORCH_TOKEN: "${ORCH_TOKEN:?set ORCH_TOKEN in .env}"
       STIX_ENABLED: "0"
       ALERT_DRY_RUN: "0"
       OPENSEARCH_URL: "http://opensearch:9200"
@@ -318,7 +316,6 @@ services:
     build: 
       context: .
       dockerfile: services/orchestrator/Dockerfile
-    container_name: orchestrator
     restart: unless-stopped
     command:
       - gunicorn
@@ -343,9 +340,9 @@ services:
       URL_NLP: http://nlp-inference:8000/score
       URL_FUS: http://fusion:8000/fuse
       URL_ALR: http://alerting:8000/alert
-      ORCH_TOKEN: "yx4hMeToZ5AEsMywCZJYxxr5"
+      ORCH_TOKEN: "${ORCH_TOKEN:?set ORCH_TOKEN in .env}"
     ports:
-      - "8000:8000"
+      - "${ORCH_PORT:-8000}:8000"
     depends_on:
       preprocess:
         condition: service_healthy
@@ -369,7 +366,6 @@ services:
     build: 
       context: .
       dockerfile: services/ingestion/Dockerfile
-    container_name: ingestion
     restart: unless-stopped
     command:
       - gunicorn
@@ -389,7 +385,7 @@ services:
       - --access-logformat
       - '{"ts":"%(t)s","level":"INFO","client":"%(h)s","req":"%(r)s","status":%(s)s,"bytes":%(B)s,"referer":"%({Referer}i)s","ua":"%({User-Agent}i)s"}'
     ports:
-      - "8001:8000"
+      - "${INGEST_PORT:-8001}:8000"
     environment:
       TOPIC_RAW: raw-events
       FORWARD_MODE: direct
@@ -406,13 +402,12 @@ services:
       start_period: 10s
   opensearch:
     image: opensearchproject/opensearch:3.3.2
-    container_name: opensearch
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"   # підлаштуй під свою RAM
       - plugins.security.disabled=true             # dev-режим без TLS/автентифікації
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=wGxJSsqR88vts26wFLnSLeEt
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD:?set OPENSEARCH_ADMIN_PASSWORD in .env}
     ulimits:
       memlock:
         soft: -1
@@ -423,7 +418,7 @@ services:
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     ports:
-      - "9200:9200"
+      - "${OPENSEARCH_PORT:-9200}:9200"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
@@ -432,12 +427,11 @@ services:
       start_period: 20s
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:3.3.0
-    container_name: opensearch-dashboards
     environment:
       - OPENSEARCH_HOSTS=http://opensearch:9200
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
     ports:
-      - "5601:5601"
+      - "${DASHBOARDS_PORT:-5601}:5601"
     depends_on:
       opensearch:
         condition: service_healthy

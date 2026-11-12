@@ -1,0 +1,102 @@
+{
+  "run": "reference/mixed",
+  "n_events": 26025,
+  "failed_requests": 0,
+  "n_benign": 25000,
+  "n_attack": 1025,
+  "latency_ms": {
+    "count": 26025.0,
+    "mean": 66.4293702209414,
+    "std": 7.989148016848755,
+    "min": 58.17,
+    "50%": 64.73,
+    "95%": 76.07,
+    "99%": 92.21159999999975,
+    "max": 370.21
+  },
+  "run_info": {
+    "set": "mixed",
+    "run_id": "reference/mixed",
+    "started_utc": "2026-11-11T16:07:13Z",
+    "git_head": "d9240fa742d0ac1dbc446b6810e189709e74916f",
+    "worktree_diff_sha256": "caef09a08afd02b1ad6d4810d956b950aa882110910619b11271c1d75abd1b7c",
+    "n_events": 26025,
+    "counts": {
+      "benign:wsal_labeled": 25000,
+      "attack:smoke": 1025
+    },
+    "concurrency": 1,
+    "env": {
+      "ML_THRESHOLD": "0.996542",
+      "NLP_THRESHOLD": "0.343929",
+      "FUSION_LEVELS": "0.997392,1.0,1.0,1.0",
+      "FUSION_NORMAL_THR": "0.886486",
+      "HYST_ENABLED": "1",
+      "MODELS_DIR": "./models",
+      "ML_AGGREGATE": "max",
+      "FUSION_MODE": "weighted",
+      "FUSION_ALPHA": "1.0",
+      "FUSION_BETA": "0.0",
+      "IMPACT_POLICY_HOST": "./policies/impact_policy.json",
+      "COMPOSE_PROJECT_NAME": null
+    },
+    "finished_utc": "2026-11-11T16:36:13Z",
+    "wall_seconds": 1740.1
+  },
+  "table4": [
+    {
+      "operating_point": "Medium+",
+      "TP": 1025,
+      "FP": 292,
+      "FN": 0,
+      "TN": 24708,
+      "Precision": 0.7782839787395596,
+      "Recall": 1.0,
+      "F1": 0.8753202391118701,
+      "FPR": 0.01168,
+      "Recall_CI95": "[0.9964, 1.0000]",
+      "FPR_CI95": "[0.0104, 0.0131]"
+    },
+    {
+      "operating_point": "Low+",
+      "TP": 1025,
+      "FP": 5438,
+      "FN": 0,
+      "TN": 19562,
+      "Precision": 0.1585950796843571,
+      "Recall": 1.0,
+      "F1": 0.2737713675213675,
+      "FPR": 0.21752,
+      "Recall_CI95": "[0.9964, 1.0000]",
+      "FPR_CI95": "[0.2124, 0.2227]"
+    }
+  ],
+  "table4_distinct": [
+    {
+      "operating_point": "Medium+",
+      "distinct_attacks": 197,
+      "distinct_benign": 25000,
+      "TP": 197,
+      "FP": 292,
+      "FN": 0,
+      "TN": 24708,
+      "Recall": 1.0,
+      "FPR": 0.01168,
+      "Recall_CI95": "[0.9814, 1.0000]",
+      "FPR_CI95": "[0.0104, 0.0131]"
+    },
+    {
+      "operating_point": "Low+",
+      "distinct_attacks": 197,
+      "distinct_benign": 25000,
+      "TP": 197,
+      "FP": 5438,
+      "FN": 0,
+      "TN": 19562,
+      "Recall": 1.0,
+      "FPR": 0.21752,
+      "Recall_CI95": "[0.9814, 1.0000]",
+      "FPR_CI95": "[0.2124, 0.2227]"
+    }
+  ]
+}

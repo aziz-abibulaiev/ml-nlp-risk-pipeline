@@ -1,0 +1,3 @@
+class,normal,low,medium,high,critical,total
+attack,0,0,110,905,10,1025
+benign,19553,5155,81,207,4,25000

@@ -1,0 +1,26 @@
+{
+  "replay-detailed": {
+    "status": "ok",
+    "events_total": 26025,
+    "events_sent": 26025,
+    "log_file": "/tmp/replay_events.jsonl",
+    "elapsed_seconds": 1629.575,
+    "avg_ms_per_event": 62.6,
+    "concurrency": 1,
+    "detailed": true,
+    "client_wall_s": 1629.982,
+    "throughput_eps": 16.0
+  },
+  "replay-simple-20": {
+    "status": "ok",
+    "events_total": 26025,
+    "events_sent": 26025,
+    "log_file": "/tmp/replay_events.jsonl",
+    "elapsed_seconds": 524.398,
+    "avg_ms_per_event": 20.1,
+    "concurrency": 20,
+    "detailed": false,
+    "client_wall_s": 524.568,
+    "throughput_eps": 49.6
+  }
+}

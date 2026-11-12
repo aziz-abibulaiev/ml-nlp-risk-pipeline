@@ -1,0 +1,6172 @@
+{
+ "feature_order": [
+  "endpoint_len",
+  "header_count",
+  "payload_size",
+  "headers_entropy",
+  "query_param_count",
+  "path_depth",
+  "suspicious_char_ratio",
+  "is_json_payload",
+  "http_method_code"
+ ],
+ "aggregate": "max",
+ "replaced": [
+  "header_count",
+  "headers_entropy"
+ ],
+ "seed": 20261110,
+ "max_abs_diff_recomputed_vs_recorded": 0.0,
+ "attacks": [
+  {
+   "seq": 19,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999146972149,
+   "ml_counterfactual": 0.9995011703289209
+  },
+  {
+   "seq": 45,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959863968939,
+   "ml_counterfactual": 0.9985041912049669
+  },
+  {
+   "seq": 84,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996278287676,
+   "ml_counterfactual": 0.9995097546647429
+  },
+  {
+   "seq": 106,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999972693647822,
+   "ml_counterfactual": 0.987558164274133
+  },
+  {
+   "seq": 151,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.999998867089304,
+   "ml_counterfactual": 0.9992606314687247
+  },
+  {
+   "seq": 244,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.99999892968967,
+   "ml_counterfactual": 0.9990948476507627
+  },
+  {
+   "seq": 253,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9995028893475768
+  },
+  {
+   "seq": 299,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999972693647822,
+   "ml_counterfactual": 0.9874675231983666
+  },
+  {
+   "seq": 300,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9980913482240901
+  },
+  {
+   "seq": 315,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985483,
+   "ml_counterfactual": 0.9999995575136977
+  },
+  {
+   "seq": 412,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959899186067,
+   "ml_counterfactual": 0.9985029531811447
+  },
+  {
+   "seq": 415,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991704733352,
+   "ml_counterfactual": 0.9987650309868024
+  },
+  {
+   "seq": 470,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997264
+  },
+  {
+   "seq": 472,
+   "attack_group": "dos",
+   "ml_recorded": 0.999995981178956,
+   "ml_counterfactual": 0.9982574058484313
+  },
+  {
+   "seq": 482,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999535373533,
+   "ml_counterfactual": 0.999509019031396
+  },
+  {
+   "seq": 483,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960008350802,
+   "ml_counterfactual": 0.9985339026569026
+  },
+  {
+   "seq": 524,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885087,
+   "ml_counterfactual": 0.9999974708639711
+  },
+  {
+   "seq": 601,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902616469,
+   "ml_counterfactual": 0.999812048936875
+  },
+  {
+   "seq": 621,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999979249894398,
+   "ml_counterfactual": 0.9990189908474828
+  },
+  {
+   "seq": 632,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989087175531,
+   "ml_counterfactual": 0.9988258842460292
+  },
+  {
+   "seq": 696,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.999998867089304,
+   "ml_counterfactual": 0.9995029931528594
+  },
+  {
+   "seq": 740,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996279199983,
+   "ml_counterfactual": 0.9995112986662475
+  },
+  {
+   "seq": 759,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999954365235979
+  },
+  {
+   "seq": 812,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988958780128,
+   "ml_counterfactual": 0.9984558261507588
+  },
+  {
+   "seq": 823,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9987601758909076
+  },
+  {
+   "seq": 881,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999946271,
+   "ml_counterfactual": 0.9999985720442607
+  },
+  {
+   "seq": 921,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9986205801260535
+  },
+  {
+   "seq": 929,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837575261,
+   "ml_counterfactual": 0.9995065976033275
+  },
+  {
+   "seq": 945,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989185703441,
+   "ml_counterfactual": 0.9990507503998751
+  },
+  {
+   "seq": 981,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999959619596062
+  },
+  {
+   "seq": 988,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991733683292,
+   "ml_counterfactual": 0.99886554256529
+  },
+  {
+   "seq": 1004,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999988899092697,
+   "ml_counterfactual": 0.9995000913596778
+  },
+  {
+   "seq": 1006,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991699437134,
+   "ml_counterfactual": 0.9988176670685166
+  },
+  {
+   "seq": 1019,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960071640196,
+   "ml_counterfactual": 0.9986783466744412
+  },
+  {
+   "seq": 1021,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990799808773,
+   "ml_counterfactual": 0.9995011737134903
+  },
+  {
+   "seq": 1028,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999533172914,
+   "ml_counterfactual": 0.9995079451425983
+  },
+  {
+   "seq": 1035,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989087175531,
+   "ml_counterfactual": 0.9990099800184392
+  },
+  {
+   "seq": 1044,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973208498107,
+   "ml_counterfactual": 0.9985663723207029
+  },
+  {
+   "seq": 1073,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999966830859892,
+   "ml_counterfactual": 0.9993734220751493
+  },
+  {
+   "seq": 1144,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999988678964867,
+   "ml_counterfactual": 0.999284455772314
+  },
+  {
+   "seq": 1185,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999966830859892,
+   "ml_counterfactual": 0.9993931433077747
+  },
+  {
+   "seq": 1204,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995551668
+  },
+  {
+   "seq": 1216,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9948206745524251
+  },
+  {
+   "seq": 1247,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959501787327,
+   "ml_counterfactual": 0.9875011613746708
+  },
+  {
+   "seq": 1269,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999990517515,
+   "ml_counterfactual": 0.9999242782701269
+  },
+  {
+   "seq": 1292,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9986335303165909
+  },
+  {
+   "seq": 1326,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999969137916812,
+   "ml_counterfactual": 0.9988782650635605
+  },
+  {
+   "seq": 1409,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985483,
+   "ml_counterfactual": 0.999999558126238
+  },
+  {
+   "seq": 1468,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996085,
+   "ml_counterfactual": 0.9999998312889727
+  },
+  {
+   "seq": 1494,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997712,
+   "ml_counterfactual": 0.9999998979781193
+  },
+  {
+   "seq": 1542,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991796045886,
+   "ml_counterfactual": 0.9990475684264745
+  },
+  {
+   "seq": 1550,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999977141021339,
+   "ml_counterfactual": 0.9993260154928445
+  },
+  {
+   "seq": 1595,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837575261,
+   "ml_counterfactual": 0.9995068039771272
+  },
+  {
+   "seq": 1613,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.9999989290186025,
+   "ml_counterfactual": 0.999165664288286
+  },
+  {
+   "seq": 1652,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999974474306228,
+   "ml_counterfactual": 0.9990895911192241
+  },
+  {
+   "seq": 1697,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999998467094883,
+   "ml_counterfactual": 0.9994039805375012
+  },
+  {
+   "seq": 1721,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988910441404,
+   "ml_counterfactual": 0.9995035537208542
+  },
+  {
+   "seq": 1731,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989246926562,
+   "ml_counterfactual": 0.9991009658737594
+  },
+  {
+   "seq": 1849,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999993561561238,
+   "ml_counterfactual": 0.9995004846166167
+  },
+  {
+   "seq": 1875,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988593402703,
+   "ml_counterfactual": 0.9995027006844152
+  },
+  {
+   "seq": 1882,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9998407926570543
+  },
+  {
+   "seq": 1918,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999963827149329,
+   "ml_counterfactual": 0.989037378347745
+  },
+  {
+   "seq": 1922,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9989096888857656
+  },
+  {
+   "seq": 1950,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999996265439197,
+   "ml_counterfactual": 0.9984068305862369
+  },
+  {
+   "seq": 1972,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999989048636015,
+   "ml_counterfactual": 0.9989372376095468
+  },
+  {
+   "seq": 1986,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.999998897195467,
+   "ml_counterfactual": 0.9981045405995926
+  },
+  {
+   "seq": 1992,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995008708008583
+  },
+  {
+   "seq": 1993,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987719142425,
+   "ml_counterfactual": 0.9987142595927748
+  },
+  {
+   "seq": 1996,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.99999998588088,
+   "ml_counterfactual": 0.999762839343173
+  },
+  {
+   "seq": 2001,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960346676672,
+   "ml_counterfactual": 0.9987225209152144
+  },
+  {
+   "seq": 2021,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999970562192
+  },
+  {
+   "seq": 2123,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988935394305,
+   "ml_counterfactual": 0.9938292142653578
+  },
+  {
+   "seq": 2130,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959837479501,
+   "ml_counterfactual": 0.9956865016205148
+  },
+  {
+   "seq": 2132,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997712,
+   "ml_counterfactual": 0.9999999061884667
+  },
+  {
+   "seq": 2143,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963750023074,
+   "ml_counterfactual": 0.987773695963873
+  },
+  {
+   "seq": 2145,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817687971,
+   "ml_counterfactual": 0.999608366655107
+  },
+  {
+   "seq": 2151,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.998647190409313
+  },
+  {
+   "seq": 2170,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999858734298,
+   "ml_counterfactual": 0.9997621616399455
+  },
+  {
+   "seq": 2176,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999534851173,
+   "ml_counterfactual": 0.9995099449460267
+  },
+  {
+   "seq": 2247,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989018981357,
+   "ml_counterfactual": 0.999000319718366
+  },
+  {
+   "seq": 2257,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996279199983,
+   "ml_counterfactual": 0.999513926475344
+  },
+  {
+   "seq": 2277,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9907504767200704
+  },
+  {
+   "seq": 2315,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988929166796,
+   "ml_counterfactual": 0.9985571967204948
+  },
+  {
+   "seq": 2326,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999165410954,
+   "ml_counterfactual": 0.998637004925469
+  },
+  {
+   "seq": 2332,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330461,
+   "ml_counterfactual": 0.9999913783446732
+  },
+  {
+   "seq": 2341,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999996444544568,
+   "ml_counterfactual": 0.9985992675326405
+  },
+  {
+   "seq": 2344,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742947,
+   "ml_counterfactual": 0.9999985513957661
+  },
+  {
+   "seq": 2352,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999993561561238,
+   "ml_counterfactual": 0.9995002944268138
+  },
+  {
+   "seq": 2409,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973370994326,
+   "ml_counterfactual": 0.9987091554537972
+  },
+  {
+   "seq": 2414,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988630488205,
+   "ml_counterfactual": 0.999491887978836
+  },
+  {
+   "seq": 2427,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989021984783,
+   "ml_counterfactual": 0.998751522390312
+  },
+  {
+   "seq": 2441,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995007109619506
+  },
+  {
+   "seq": 2443,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999998881020313,
+   "ml_counterfactual": 0.9995000894790094
+  },
+  {
+   "seq": 2455,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9987816243531487
+  },
+  {
+   "seq": 2471,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988993364674,
+   "ml_counterfactual": 0.9985258927913325
+  },
+  {
+   "seq": 2493,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988890638493,
+   "ml_counterfactual": 0.9885188964168381
+  },
+  {
+   "seq": 2509,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999660041,
+   "ml_counterfactual": 0.999994907180973
+  },
+  {
+   "seq": 2568,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742947,
+   "ml_counterfactual": 0.9999955518134483
+  },
+  {
+   "seq": 2575,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999996182463,
+   "ml_counterfactual": 0.9999642961334353
+  },
+  {
+   "seq": 2591,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991733683292,
+   "ml_counterfactual": 0.9986953170892279
+  },
+  {
+   "seq": 2610,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999597,
+   "ml_counterfactual": 0.9999999825763038
+  },
+  {
+   "seq": 2617,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9986607819703957
+  },
+  {
+   "seq": 2652,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817748322,
+   "ml_counterfactual": 0.9996353754095219
+  },
+  {
+   "seq": 2654,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991699437134,
+   "ml_counterfactual": 0.9995028298360094
+  },
+  {
+   "seq": 2663,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.9999989290186025,
+   "ml_counterfactual": 0.9991306197880748
+  },
+  {
+   "seq": 2678,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.999998860530583,
+   "ml_counterfactual": 0.9994776292285491
+  },
+  {
+   "seq": 2689,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989185703441,
+   "ml_counterfactual": 0.9992722142562345
+  },
+  {
+   "seq": 2708,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960071640196,
+   "ml_counterfactual": 0.9986477797216919
+  },
+  {
+   "seq": 2740,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988958780128,
+   "ml_counterfactual": 0.995950737149926
+  },
+  {
+   "seq": 2741,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999996444544568,
+   "ml_counterfactual": 0.9985033013885646
+  },
+  {
+   "seq": 2743,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989246926562,
+   "ml_counterfactual": 0.9990604086591589
+  },
+  {
+   "seq": 2745,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999963827149329,
+   "ml_counterfactual": 0.9888683329838834
+  },
+  {
+   "seq": 2746,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999986173606,
+   "ml_counterfactual": 0.9998883483886221
+  },
+  {
+   "seq": 2779,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960008350802,
+   "ml_counterfactual": 0.9986311665971314
+  },
+  {
+   "seq": 2827,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999962626704482,
+   "ml_counterfactual": 0.9992129364973605
+  },
+  {
+   "seq": 2865,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990700075349,
+   "ml_counterfactual": 0.9995009368629808
+  },
+  {
+   "seq": 2878,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564036015,
+   "ml_counterfactual": 0.9995071212990257
+  },
+  {
+   "seq": 2891,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990104942336059
+  },
+  {
+   "seq": 2952,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999954817613534
+  },
+  {
+   "seq": 2955,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885153,
+   "ml_counterfactual": 0.9999974522626781
+  },
+  {
+   "seq": 2961,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999974470616572,
+   "ml_counterfactual": 0.9991659847560044
+  },
+  {
+   "seq": 3010,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902668811,
+   "ml_counterfactual": 0.9998068016527814
+  },
+  {
+   "seq": 3025,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987677320809,
+   "ml_counterfactual": 0.998620605557911
+  },
+  {
+   "seq": 3036,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987677320809,
+   "ml_counterfactual": 0.9985376700307557
+  },
+  {
+   "seq": 3047,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960008350802,
+   "ml_counterfactual": 0.9985117589493886
+  },
+  {
+   "seq": 3049,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999894891874
+  },
+  {
+   "seq": 3127,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989185703441,
+   "ml_counterfactual": 0.9990042517934952
+  },
+  {
+   "seq": 3166,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999966830859892,
+   "ml_counterfactual": 0.9993814016256738
+  },
+  {
+   "seq": 3197,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995009367023808
+  },
+  {
+   "seq": 3214,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266142892,
+   "ml_counterfactual": 0.9995054468822757
+  },
+  {
+   "seq": 3279,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128015719,
+   "ml_counterfactual": 0.9995071639639347
+  },
+  {
+   "seq": 3314,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982923513792,
+   "ml_counterfactual": 0.9985281718540606
+  },
+  {
+   "seq": 3338,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996279199983,
+   "ml_counterfactual": 0.9995109458759417
+  },
+  {
+   "seq": 3368,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837575261,
+   "ml_counterfactual": 0.999506585307384
+  },
+  {
+   "seq": 3399,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988003089011,
+   "ml_counterfactual": 0.9991666080577447
+  },
+  {
+   "seq": 3517,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989011492171,
+   "ml_counterfactual": 0.998865638370233
+  },
+  {
+   "seq": 3550,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991733683292,
+   "ml_counterfactual": 0.9988208364951039
+  },
+  {
+   "seq": 3581,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999993561561238,
+   "ml_counterfactual": 0.9995009002308453
+  },
+  {
+   "seq": 3594,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982923513792,
+   "ml_counterfactual": 0.9985372860644519
+  },
+  {
+   "seq": 3677,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999933930835468
+  },
+  {
+   "seq": 3683,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9987552461418105
+  },
+  {
+   "seq": 3710,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999977141021339,
+   "ml_counterfactual": 0.9992990352359199
+  },
+  {
+   "seq": 3711,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960317783974,
+   "ml_counterfactual": 0.9987134133738426
+  },
+  {
+   "seq": 3712,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991796045886,
+   "ml_counterfactual": 0.9990267049895039
+  },
+  {
+   "seq": 3720,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988924428168,
+   "ml_counterfactual": 0.9918243953390665
+  },
+  {
+   "seq": 3797,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999858734298,
+   "ml_counterfactual": 0.9997618942122525
+  },
+  {
+   "seq": 3855,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988630488205,
+   "ml_counterfactual": 0.9994254187934823
+  },
+  {
+   "seq": 3864,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996279199983,
+   "ml_counterfactual": 0.999510323079041
+  },
+  {
+   "seq": 3879,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988691867846,
+   "ml_counterfactual": 0.99912427346546
+  },
+  {
+   "seq": 3891,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999881,
+   "ml_counterfactual": 0.9999999917530433
+  },
+  {
+   "seq": 3917,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999993561561238,
+   "ml_counterfactual": 0.999501883436721
+  },
+  {
+   "seq": 3930,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982574265437,
+   "ml_counterfactual": 0.9825037177115004
+  },
+  {
+   "seq": 3970,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999977066724821,
+   "ml_counterfactual": 0.9987342932275263
+  },
+  {
+   "seq": 3977,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988691867846,
+   "ml_counterfactual": 0.9995000268095412
+  },
+  {
+   "seq": 4009,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9917085374926117
+  },
+  {
+   "seq": 4022,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999914232517
+  },
+  {
+   "seq": 4025,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997196
+  },
+  {
+   "seq": 4034,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985536741344919
+  },
+  {
+   "seq": 4083,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987719142425,
+   "ml_counterfactual": 0.9986265375511332
+  },
+  {
+   "seq": 4116,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837904941,
+   "ml_counterfactual": 0.9995055392848137
+  },
+  {
+   "seq": 4262,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999998556335,
+   "ml_counterfactual": 0.9999826776533287
+  },
+  {
+   "seq": 4378,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996659232660089
+  },
+  {
+   "seq": 4395,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999659899,
+   "ml_counterfactual": 0.9999943988285496
+  },
+  {
+   "seq": 4461,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999535373533,
+   "ml_counterfactual": 0.9995101117368091
+  },
+  {
+   "seq": 4466,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9988164142882447
+  },
+  {
+   "seq": 4510,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962893034522,
+   "ml_counterfactual": 0.9988362841836391
+  },
+  {
+   "seq": 4520,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885087,
+   "ml_counterfactual": 0.9999974645765729
+  },
+  {
+   "seq": 4536,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564036015,
+   "ml_counterfactual": 0.9995058035857076
+  },
+  {
+   "seq": 4555,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266614888,
+   "ml_counterfactual": 0.999507482084541
+  },
+  {
+   "seq": 4557,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991662213751,
+   "ml_counterfactual": 0.9995028122514282
+  },
+  {
+   "seq": 4591,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996088,
+   "ml_counterfactual": 0.999999857166815
+  },
+  {
+   "seq": 4596,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988834537314,
+   "ml_counterfactual": 0.9995002373286032
+  },
+  {
+   "seq": 4608,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999963071551348,
+   "ml_counterfactual": 0.998773434249864
+  },
+  {
+   "seq": 4635,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999996182463,
+   "ml_counterfactual": 0.9999593816075862
+  },
+  {
+   "seq": 4690,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.998630657661367
+  },
+  {
+   "seq": 4715,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9989265127812006
+  },
+  {
+   "seq": 4731,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997821390074,
+   "ml_counterfactual": 0.9995038702968371
+  },
+  {
+   "seq": 4760,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9912477216942129
+  },
+  {
+   "seq": 4809,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974175213,
+   "ml_counterfactual": 0.9998849945837979
+  },
+  {
+   "seq": 4870,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.998769230926194
+  },
+  {
+   "seq": 4884,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999937586567027
+  },
+  {
+   "seq": 4889,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.99999998588088,
+   "ml_counterfactual": 0.9997760800968162
+  },
+  {
+   "seq": 4905,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.9997788511614818
+  },
+  {
+   "seq": 4914,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.999999999999719
+  },
+  {
+   "seq": 4935,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999896812156
+  },
+  {
+   "seq": 4942,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999665645775,
+   "ml_counterfactual": 0.9995044961738223
+  },
+  {
+   "seq": 4945,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999858734298,
+   "ml_counterfactual": 0.9997646557240657
+  },
+  {
+   "seq": 4961,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997821390074,
+   "ml_counterfactual": 0.9995039092586875
+  },
+  {
+   "seq": 4971,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999965988309
+  },
+  {
+   "seq": 4992,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989021984783,
+   "ml_counterfactual": 0.9986145004190284
+  },
+  {
+   "seq": 5028,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989078866885,
+   "ml_counterfactual": 0.9987351362612552
+  },
+  {
+   "seq": 5035,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960592357785,
+   "ml_counterfactual": 0.9988091989069378
+  },
+  {
+   "seq": 5058,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9982608607339882
+  },
+  {
+   "seq": 5069,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988958780128,
+   "ml_counterfactual": 0.996377786137335
+  },
+  {
+   "seq": 5130,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995544114
+  },
+  {
+   "seq": 5138,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999989048636015,
+   "ml_counterfactual": 0.9986806453460771
+  },
+  {
+   "seq": 5140,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991746408806,
+   "ml_counterfactual": 0.9990490613596192
+  },
+  {
+   "seq": 5152,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999990517515,
+   "ml_counterfactual": 0.9999236562095007
+  },
+  {
+   "seq": 5177,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9986168857879165
+  },
+  {
+   "seq": 5188,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817687971,
+   "ml_counterfactual": 0.9996088233532416
+  },
+  {
+   "seq": 5214,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999994992558
+  },
+  {
+   "seq": 5279,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989018981357,
+   "ml_counterfactual": 0.9990275456353206
+  },
+  {
+   "seq": 5336,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988910441404,
+   "ml_counterfactual": 0.9995000550788354
+  },
+  {
+   "seq": 5360,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989162658399,
+   "ml_counterfactual": 0.999122708221349
+  },
+  {
+   "seq": 5396,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960317783974,
+   "ml_counterfactual": 0.9988093765317904
+  },
+  {
+   "seq": 5412,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902668811,
+   "ml_counterfactual": 0.9998124815128209
+  },
+  {
+   "seq": 5422,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960071640196,
+   "ml_counterfactual": 0.9986550111285529
+  },
+  {
+   "seq": 5440,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996337591
+  },
+  {
+   "seq": 5459,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996348266977796
+  },
+  {
+   "seq": 5470,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989162658399,
+   "ml_counterfactual": 0.9989452706922627
+  },
+  {
+   "seq": 5500,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9985354130156067
+  },
+  {
+   "seq": 5543,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902616469,
+   "ml_counterfactual": 0.9998061187587658
+  },
+  {
+   "seq": 5554,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9986408773363777
+  },
+  {
+   "seq": 5567,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128015719,
+   "ml_counterfactual": 0.9995083637829264
+  },
+  {
+   "seq": 5574,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989162658399,
+   "ml_counterfactual": 0.9991513307398089
+  },
+  {
+   "seq": 5602,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973208498107,
+   "ml_counterfactual": 0.9985729766904334
+  },
+  {
+   "seq": 5612,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999991430996459,
+   "ml_counterfactual": 0.9995011082899274
+  },
+  {
+   "seq": 5614,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999994978593,
+   "ml_counterfactual": 0.9999583557755283
+  },
+  {
+   "seq": 5640,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989078866885,
+   "ml_counterfactual": 0.9988580801814212
+  },
+  {
+   "seq": 5654,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999310573823,
+   "ml_counterfactual": 0.9995080072710398
+  },
+  {
+   "seq": 5673,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999997389324714,
+   "ml_counterfactual": 0.9995027719846581
+  },
+  {
+   "seq": 5706,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999974470616572,
+   "ml_counterfactual": 0.9990839776408557
+  },
+  {
+   "seq": 5731,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9985090450317573
+  },
+  {
+   "seq": 5744,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9986605759773262
+  },
+  {
+   "seq": 5745,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742859,
+   "ml_counterfactual": 0.99999536316313
+  },
+  {
+   "seq": 5754,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982596483372,
+   "ml_counterfactual": 0.9858920042360116
+  },
+  {
+   "seq": 5767,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989087175531,
+   "ml_counterfactual": 0.9995027026190535
+  },
+  {
+   "seq": 5783,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999988678964867,
+   "ml_counterfactual": 0.9992916950902401
+  },
+  {
+   "seq": 5832,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989084186107,
+   "ml_counterfactual": 0.9990516472630638
+  },
+  {
+   "seq": 5861,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651722268,
+   "ml_counterfactual": 0.9995108591863326
+  },
+  {
+   "seq": 5867,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962517294942,
+   "ml_counterfactual": 0.9921689258550487
+  },
+  {
+   "seq": 5886,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999534851173,
+   "ml_counterfactual": 0.9995071466516727
+  },
+  {
+   "seq": 5900,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999894336167
+  },
+  {
+   "seq": 5931,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990700075349,
+   "ml_counterfactual": 0.9995010234692404
+  },
+  {
+   "seq": 5941,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999974470616572,
+   "ml_counterfactual": 0.9990593274552858
+  },
+  {
+   "seq": 5966,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989246926562,
+   "ml_counterfactual": 0.9990514838723584
+  },
+  {
+   "seq": 5974,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9995028694343442
+  },
+  {
+   "seq": 5976,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991733683292,
+   "ml_counterfactual": 0.9995029017825036
+  },
+  {
+   "seq": 5983,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999966830859892,
+   "ml_counterfactual": 0.9993972747584671
+  },
+  {
+   "seq": 5988,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989050950193,
+   "ml_counterfactual": 0.9986790870351326
+  },
+  {
+   "seq": 6034,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997821390074,
+   "ml_counterfactual": 0.999504410493892
+  },
+  {
+   "seq": 6043,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742859,
+   "ml_counterfactual": 0.9999953522904295
+  },
+  {
+   "seq": 6076,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973370994326,
+   "ml_counterfactual": 0.9987440586626855
+  },
+  {
+   "seq": 6086,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988993364674,
+   "ml_counterfactual": 0.9985322894012012
+  },
+  {
+   "seq": 6115,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989021984783,
+   "ml_counterfactual": 0.9986145031065438
+  },
+  {
+   "seq": 6127,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999981897105413,
+   "ml_counterfactual": 0.9990934936507373
+  },
+  {
+   "seq": 6178,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988834537314,
+   "ml_counterfactual": 0.9991715081849298
+  },
+  {
+   "seq": 6182,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997711,
+   "ml_counterfactual": 0.9999998988153879
+  },
+  {
+   "seq": 6186,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963701758151,
+   "ml_counterfactual": 0.984850792764966
+  },
+  {
+   "seq": 6190,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999966830859892,
+   "ml_counterfactual": 0.9993716387440433
+  },
+  {
+   "seq": 6246,
+   "attack_group": "websocket",
+   "ml_recorded": 0.999996636707382,
+   "ml_counterfactual": 0.9991100600460843
+  },
+  {
+   "seq": 6345,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999962626704482,
+   "ml_counterfactual": 0.9990949355003711
+  },
+  {
+   "seq": 6353,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999977141021339,
+   "ml_counterfactual": 0.9993322920045729
+  },
+  {
+   "seq": 6370,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902668811,
+   "ml_counterfactual": 0.9998116030825511
+  },
+  {
+   "seq": 6393,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9987104135593309
+  },
+  {
+   "seq": 6409,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985487,
+   "ml_counterfactual": 0.9999995568778317
+  },
+  {
+   "seq": 6426,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996085,
+   "ml_counterfactual": 0.9999998316959289
+  },
+  {
+   "seq": 6440,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9932471880204649
+  },
+  {
+   "seq": 6449,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996325227
+  },
+  {
+   "seq": 6464,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128428957,
+   "ml_counterfactual": 0.999506066841234
+  },
+  {
+   "seq": 6498,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989246926562,
+   "ml_counterfactual": 0.999125786816009
+  },
+  {
+   "seq": 6507,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999533172914,
+   "ml_counterfactual": 0.9996813382544449
+  },
+  {
+   "seq": 6524,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991796045886,
+   "ml_counterfactual": 0.9991507831386022
+  },
+  {
+   "seq": 6529,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997712,
+   "ml_counterfactual": 0.9999999004280209
+  },
+  {
+   "seq": 6541,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999960089242166,
+   "ml_counterfactual": 0.9986366272300343
+  },
+  {
+   "seq": 6567,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330067,
+   "ml_counterfactual": 0.999990835766432
+  },
+  {
+   "seq": 6605,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966103472
+  },
+  {
+   "seq": 6616,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266142892,
+   "ml_counterfactual": 0.9995060329810842
+  },
+  {
+   "seq": 6637,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999872123162,
+   "ml_counterfactual": 0.9994137221821665
+  },
+  {
+   "seq": 6661,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9988364702194192
+  },
+  {
+   "seq": 6704,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.99999892968967,
+   "ml_counterfactual": 0.9991733665784313
+  },
+  {
+   "seq": 6768,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999994978593,
+   "ml_counterfactual": 0.9999839216712687
+  },
+  {
+   "seq": 6770,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985576925919488
+  },
+  {
+   "seq": 6802,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999894296464
+  },
+  {
+   "seq": 6833,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266614888,
+   "ml_counterfactual": 0.9995069524681052
+  },
+  {
+   "seq": 6835,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985487,
+   "ml_counterfactual": 0.9999995583415823
+  },
+  {
+   "seq": 6847,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987719142425,
+   "ml_counterfactual": 0.9986459836651826
+  },
+  {
+   "seq": 6860,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.999999999560917
+  },
+  {
+   "seq": 6895,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999165410954,
+   "ml_counterfactual": 0.9985502202543196
+  },
+  {
+   "seq": 6910,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9986826415229373
+  },
+  {
+   "seq": 6940,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.9997778756574748
+  },
+  {
+   "seq": 6958,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989050950193,
+   "ml_counterfactual": 0.9995026292567601
+  },
+  {
+   "seq": 7014,
+   "attack_group": "dos",
+   "ml_recorded": 0.999995981178956,
+   "ml_counterfactual": 0.9981067261521962
+  },
+  {
+   "seq": 7021,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817687971,
+   "ml_counterfactual": 0.999612736759593
+  },
+  {
+   "seq": 7040,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988607556403,
+   "ml_counterfactual": 0.999401989841445
+  },
+  {
+   "seq": 7091,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.999998860530583,
+   "ml_counterfactual": 0.9995000865944348
+  },
+  {
+   "seq": 7156,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.999780475583087
+  },
+  {
+   "seq": 7167,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995590171
+  },
+  {
+   "seq": 7188,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999931947010515
+  },
+  {
+   "seq": 7196,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999881,
+   "ml_counterfactual": 0.9999999917592982
+  },
+  {
+   "seq": 7245,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999966285001054,
+   "ml_counterfactual": 0.9990008670804176
+  },
+  {
+   "seq": 7278,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9988952023820941
+  },
+  {
+   "seq": 7290,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999990646359574,
+   "ml_counterfactual": 0.9995007772287194
+  },
+  {
+   "seq": 7336,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999146972149,
+   "ml_counterfactual": 0.9995012164411937
+  },
+  {
+   "seq": 7350,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988890638493,
+   "ml_counterfactual": 0.9876668943009029
+  },
+  {
+   "seq": 7385,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999998881020313,
+   "ml_counterfactual": 0.999503869550644
+  },
+  {
+   "seq": 7391,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991733683292,
+   "ml_counterfactual": 0.9990423535079082
+  },
+  {
+   "seq": 7437,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742859,
+   "ml_counterfactual": 0.9999953515403622
+  },
+  {
+   "seq": 7438,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.998529331218292
+  },
+  {
+   "seq": 7473,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988890638493,
+   "ml_counterfactual": 0.987685209055442
+  },
+  {
+   "seq": 7494,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128015719,
+   "ml_counterfactual": 0.9995075266278588
+  },
+  {
+   "seq": 7526,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9990130170957889
+  },
+  {
+   "seq": 7533,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.998296236437168
+  },
+  {
+   "seq": 7554,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.99999998588088,
+   "ml_counterfactual": 0.9999019811751012
+  },
+  {
+   "seq": 7575,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999933302929295
+  },
+  {
+   "seq": 7601,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9986259092200139
+  },
+  {
+   "seq": 7641,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989084186107,
+   "ml_counterfactual": 0.9988899473938792
+  },
+  {
+   "seq": 7654,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999996444544568,
+   "ml_counterfactual": 0.9986587412006893
+  },
+  {
+   "seq": 7658,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959501787327,
+   "ml_counterfactual": 0.9885628240425951
+  },
+  {
+   "seq": 7663,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837904941,
+   "ml_counterfactual": 0.9995066027533663
+  },
+  {
+   "seq": 7674,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988993364674,
+   "ml_counterfactual": 0.9985236865652455
+  },
+  {
+   "seq": 7678,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9983247011192754
+  },
+  {
+   "seq": 7696,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999988678964867,
+   "ml_counterfactual": 0.9992376289974243
+  },
+  {
+   "seq": 7699,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651320289,
+   "ml_counterfactual": 0.9995109807489324
+  },
+  {
+   "seq": 7757,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9977043258131152
+  },
+  {
+   "seq": 7829,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988958780128,
+   "ml_counterfactual": 0.998644527728663
+  },
+  {
+   "seq": 7887,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992429827828,
+   "ml_counterfactual": 0.9995014281778102
+  },
+  {
+   "seq": 7915,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988935394305,
+   "ml_counterfactual": 0.9935588970494821
+  },
+  {
+   "seq": 7928,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742947,
+   "ml_counterfactual": 0.9999954153903564
+  },
+  {
+   "seq": 7932,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9989721812307019
+  },
+  {
+   "seq": 7941,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991662213751,
+   "ml_counterfactual": 0.9985185716762068
+  },
+  {
+   "seq": 7946,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960008350802,
+   "ml_counterfactual": 0.9986015108116003
+  },
+  {
+   "seq": 7952,
+   "attack_group": "dos",
+   "ml_recorded": 0.999995981178956,
+   "ml_counterfactual": 0.9955954410449382
+  },
+  {
+   "seq": 7965,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974186263,
+   "ml_counterfactual": 0.999885051505821
+  },
+  {
+   "seq": 7973,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742859,
+   "ml_counterfactual": 0.9999953525531903
+  },
+  {
+   "seq": 8033,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.999999999994624,
+   "ml_counterfactual": 0.9999996333861845
+  },
+  {
+   "seq": 8044,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988994272658,
+   "ml_counterfactual": 0.99862481515245
+  },
+  {
+   "seq": 8052,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999998993,
+   "ml_counterfactual": 0.9999999501053749
+  },
+  {
+   "seq": 8124,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885153,
+   "ml_counterfactual": 0.9999980617076033
+  },
+  {
+   "seq": 8128,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960317783974,
+   "ml_counterfactual": 0.9986883228804749
+  },
+  {
+   "seq": 8148,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.999611370883506
+  },
+  {
+   "seq": 8211,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960592357785,
+   "ml_counterfactual": 0.9988574070086118
+  },
+  {
+   "seq": 8228,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999970574799
+  },
+  {
+   "seq": 8231,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651320289,
+   "ml_counterfactual": 0.9995107560735211
+  },
+  {
+   "seq": 8277,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989050950193,
+   "ml_counterfactual": 0.998809036113188
+  },
+  {
+   "seq": 8299,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991694306276,
+   "ml_counterfactual": 0.9987727023996377
+  },
+  {
+   "seq": 8301,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962517294942,
+   "ml_counterfactual": 0.9924102576868832
+  },
+  {
+   "seq": 8310,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989011492171,
+   "ml_counterfactual": 0.9995026144306032
+  },
+  {
+   "seq": 8331,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974186263,
+   "ml_counterfactual": 0.999885710969979
+  },
+  {
+   "seq": 8340,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990700075349,
+   "ml_counterfactual": 0.9995049659409346
+  },
+  {
+   "seq": 8400,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999998467094883,
+   "ml_counterfactual": 0.9995032517292082
+  },
+  {
+   "seq": 8434,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902616469,
+   "ml_counterfactual": 0.9998276900050734
+  },
+  {
+   "seq": 8459,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959501787327,
+   "ml_counterfactual": 0.9874976655789109
+  },
+  {
+   "seq": 8483,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960104463865,
+   "ml_counterfactual": 0.9986050884170132
+  },
+  {
+   "seq": 8489,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989129655557,
+   "ml_counterfactual": 0.9988655815840305
+  },
+  {
+   "seq": 8495,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999999098922038,
+   "ml_counterfactual": 0.9992486760139287
+  },
+  {
+   "seq": 8500,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999977066724821,
+   "ml_counterfactual": 0.9987186217784593
+  },
+  {
+   "seq": 8505,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999972693647822,
+   "ml_counterfactual": 0.9889504105936958
+  },
+  {
+   "seq": 8515,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999310573823,
+   "ml_counterfactual": 0.9995013374476795
+  },
+  {
+   "seq": 8518,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9986086711486127
+  },
+  {
+   "seq": 8537,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996278287676,
+   "ml_counterfactual": 0.9995143236083873
+  },
+  {
+   "seq": 8544,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999996182463,
+   "ml_counterfactual": 0.9999560002858522
+  },
+  {
+   "seq": 8587,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960592357785,
+   "ml_counterfactual": 0.9988125440173944
+  },
+  {
+   "seq": 8609,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997186
+  },
+  {
+   "seq": 8619,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991796045886,
+   "ml_counterfactual": 0.9990260196987839
+  },
+  {
+   "seq": 8622,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9987139544602527
+  },
+  {
+   "seq": 8624,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960008350802,
+   "ml_counterfactual": 0.9985168218549142
+  },
+  {
+   "seq": 8651,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990700075349,
+   "ml_counterfactual": 0.9995010813845888
+  },
+  {
+   "seq": 8658,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999965945787
+  },
+  {
+   "seq": 8661,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999974474306228,
+   "ml_counterfactual": 0.9990838398556805
+  },
+  {
+   "seq": 8682,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128015719,
+   "ml_counterfactual": 0.9995837622656344
+  },
+  {
+   "seq": 8693,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999946271,
+   "ml_counterfactual": 0.9999985856952156
+  },
+  {
+   "seq": 8727,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999993168847381,
+   "ml_counterfactual": 0.9995006031594414
+  },
+  {
+   "seq": 8731,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999534851173,
+   "ml_counterfactual": 0.9995103633469232
+  },
+  {
+   "seq": 8770,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989084186107,
+   "ml_counterfactual": 0.9989375074559886
+  },
+  {
+   "seq": 8819,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999998993,
+   "ml_counterfactual": 0.9999999429023171
+  },
+  {
+   "seq": 8849,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996792297
+  },
+  {
+   "seq": 8859,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128015719,
+   "ml_counterfactual": 0.999507919081595
+  },
+  {
+   "seq": 8863,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9985862444308089
+  },
+  {
+   "seq": 8907,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9985261928225525
+  },
+  {
+   "seq": 8921,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651722268,
+   "ml_counterfactual": 0.9995107640660199
+  },
+  {
+   "seq": 8937,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128428957,
+   "ml_counterfactual": 0.9995069663117708
+  },
+  {
+   "seq": 8943,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987677320809,
+   "ml_counterfactual": 0.9986137019781457
+  },
+  {
+   "seq": 8973,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959899186067,
+   "ml_counterfactual": 0.998546775979526
+  },
+  {
+   "seq": 9017,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999399,
+   "ml_counterfactual": 0.9999999617897753
+  },
+  {
+   "seq": 9044,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9987909912895141
+  },
+  {
+   "seq": 9050,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817748322,
+   "ml_counterfactual": 0.9996121088221114
+  },
+  {
+   "seq": 9077,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996326736
+  },
+  {
+   "seq": 9080,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987719142425,
+   "ml_counterfactual": 0.9986323052077726
+  },
+  {
+   "seq": 9089,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959899186067,
+   "ml_counterfactual": 0.9985452512376382
+  },
+  {
+   "seq": 9150,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988993364674,
+   "ml_counterfactual": 0.998551353539699
+  },
+  {
+   "seq": 9171,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9954750335076609
+  },
+  {
+   "seq": 9188,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9986238757663214
+  },
+  {
+   "seq": 9241,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902616469,
+   "ml_counterfactual": 0.9998907677197358
+  },
+  {
+   "seq": 9246,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963750023074,
+   "ml_counterfactual": 0.9885683827917124
+  },
+  {
+   "seq": 9323,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999979249894398,
+   "ml_counterfactual": 0.9994791270583572
+  },
+  {
+   "seq": 9325,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991718684718,
+   "ml_counterfactual": 0.9988056057985432
+  },
+  {
+   "seq": 9338,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988607556403,
+   "ml_counterfactual": 0.9994745789075232
+  },
+  {
+   "seq": 9342,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9987323933035281
+  },
+  {
+   "seq": 9354,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995006364352425
+  },
+  {
+   "seq": 9434,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999146972149,
+   "ml_counterfactual": 0.9995011640323209
+  },
+  {
+   "seq": 9436,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.999778967735352
+  },
+  {
+   "seq": 9455,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959863968939,
+   "ml_counterfactual": 0.9981766041499875
+  },
+  {
+   "seq": 9456,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9975817900465351
+  },
+  {
+   "seq": 9479,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999966285001054,
+   "ml_counterfactual": 0.999000292040159
+  },
+  {
+   "seq": 9490,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999997512375,
+   "ml_counterfactual": 0.999968907042519
+  },
+  {
+   "seq": 9530,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999990646359574,
+   "ml_counterfactual": 0.9993989908072959
+  },
+  {
+   "seq": 9549,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985686255285385
+  },
+  {
+   "seq": 9608,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9983615105249639
+  },
+  {
+   "seq": 9644,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.998509865569988
+  },
+  {
+   "seq": 9689,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330067,
+   "ml_counterfactual": 0.9999908159117233
+  },
+  {
+   "seq": 9816,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988994272658,
+   "ml_counterfactual": 0.9987270514189857
+  },
+  {
+   "seq": 9829,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989011492171,
+   "ml_counterfactual": 0.9986531193168695
+  },
+  {
+   "seq": 9876,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837904941,
+   "ml_counterfactual": 0.9995068637781127
+  },
+  {
+   "seq": 9896,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999665645775,
+   "ml_counterfactual": 0.9995035645056044
+  },
+  {
+   "seq": 9900,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995728098
+  },
+  {
+   "seq": 9904,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988644661431,
+   "ml_counterfactual": 0.999500203814628
+  },
+  {
+   "seq": 9935,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817748322,
+   "ml_counterfactual": 0.9996134093656874
+  },
+  {
+   "seq": 9938,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.9999989290186025,
+   "ml_counterfactual": 0.9991620571610457
+  },
+  {
+   "seq": 9948,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987719142425,
+   "ml_counterfactual": 0.9986458293818979
+  },
+  {
+   "seq": 9955,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9988916293802953
+  },
+  {
+   "seq": 9964,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999988899092697,
+   "ml_counterfactual": 0.9995034097785311
+  },
+  {
+   "seq": 9990,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885153,
+   "ml_counterfactual": 0.999997490992741
+  },
+  {
+   "seq": 9991,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9988159899096741
+  },
+  {
+   "seq": 10005,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9982502501479639
+  },
+  {
+   "seq": 10022,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9986190674531
+  },
+  {
+   "seq": 10030,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959863968939,
+   "ml_counterfactual": 0.9976807444610961
+  },
+  {
+   "seq": 10098,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963750023074,
+   "ml_counterfactual": 0.9874117149472226
+  },
+  {
+   "seq": 10109,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9979783142290088
+  },
+  {
+   "seq": 10138,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988910441404,
+   "ml_counterfactual": 0.999503429302386
+  },
+  {
+   "seq": 10142,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982596483372,
+   "ml_counterfactual": 0.9878556746934739
+  },
+  {
+   "seq": 10151,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988993364674,
+   "ml_counterfactual": 0.9988331239145114
+  },
+  {
+   "seq": 10207,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985483,
+   "ml_counterfactual": 0.9999995878015892
+  },
+  {
+   "seq": 10250,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959837479501,
+   "ml_counterfactual": 0.9970507478405174
+  },
+  {
+   "seq": 10254,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999979249894398,
+   "ml_counterfactual": 0.9990075956748401
+  },
+  {
+   "seq": 10283,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9988829679664603
+  },
+  {
+   "seq": 10298,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991545619394,
+   "ml_counterfactual": 0.9993176779113209
+  },
+  {
+   "seq": 10314,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.99858792746237
+  },
+  {
+   "seq": 10357,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817748322,
+   "ml_counterfactual": 0.9996200369137981
+  },
+  {
+   "seq": 10391,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999962626704482,
+   "ml_counterfactual": 0.9992120505715278
+  },
+  {
+   "seq": 10452,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128428957,
+   "ml_counterfactual": 0.9995072441726265
+  },
+  {
+   "seq": 10455,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992405109689,
+   "ml_counterfactual": 0.9995028273968166
+  },
+  {
+   "seq": 10509,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9989465724450353
+  },
+  {
+   "seq": 10517,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9981888612439713
+  },
+  {
+   "seq": 10519,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997711,
+   "ml_counterfactual": 0.9999999067334608
+  },
+  {
+   "seq": 10573,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989018981357,
+   "ml_counterfactual": 0.9986396215699778
+  },
+  {
+   "seq": 10580,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.99999892968967,
+   "ml_counterfactual": 0.9990907340250909
+  },
+  {
+   "seq": 10599,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999996265439197,
+   "ml_counterfactual": 0.9962222451251186
+  },
+  {
+   "seq": 10600,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988593402703,
+   "ml_counterfactual": 0.9993505826611543
+  },
+  {
+   "seq": 10605,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999997389324714,
+   "ml_counterfactual": 0.9995023911898869
+  },
+  {
+   "seq": 10607,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992429827828,
+   "ml_counterfactual": 0.9995075269187909
+  },
+  {
+   "seq": 10656,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999991430996459,
+   "ml_counterfactual": 0.999500180659229
+  },
+  {
+   "seq": 10659,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959646092597,
+   "ml_counterfactual": 0.9916338829228071
+  },
+  {
+   "seq": 10670,
+   "attack_group": "websocket",
+   "ml_recorded": 0.999996636707382,
+   "ml_counterfactual": 0.9991300473147467
+  },
+  {
+   "seq": 10705,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266142892,
+   "ml_counterfactual": 0.9995061942495794
+  },
+  {
+   "seq": 10792,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266142892,
+   "ml_counterfactual": 0.9995068808699169
+  },
+  {
+   "seq": 10806,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9986606505807597
+  },
+  {
+   "seq": 10848,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.998891676610888
+  },
+  {
+   "seq": 10850,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991753015538,
+   "ml_counterfactual": 0.9995029241214012
+  },
+  {
+   "seq": 10864,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991552126029,
+   "ml_counterfactual": 0.9993283969665834
+  },
+  {
+   "seq": 10896,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996319255
+  },
+  {
+   "seq": 10931,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999998881020313,
+   "ml_counterfactual": 0.9993088418152926
+  },
+  {
+   "seq": 10958,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.999998867089304,
+   "ml_counterfactual": 0.9992612632524961
+  },
+  {
+   "seq": 10969,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982923513792,
+   "ml_counterfactual": 0.9985464693539398
+  },
+  {
+   "seq": 10984,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960104463865,
+   "ml_counterfactual": 0.9985839717882563
+  },
+  {
+   "seq": 10997,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991552126029,
+   "ml_counterfactual": 0.9993900350578929
+  },
+  {
+   "seq": 11045,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999974474306228,
+   "ml_counterfactual": 0.9990588146431617
+  },
+  {
+   "seq": 11076,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962517294942,
+   "ml_counterfactual": 0.9903720570006248
+  },
+  {
+   "seq": 11104,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997823455474,
+   "ml_counterfactual": 0.9995043685129443
+  },
+  {
+   "seq": 11140,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742859,
+   "ml_counterfactual": 0.9999954398176132
+  },
+  {
+   "seq": 11143,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982923513792,
+   "ml_counterfactual": 0.9985183758110884
+  },
+  {
+   "seq": 11164,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9985183608306791
+  },
+  {
+   "seq": 11169,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999991430996459,
+   "ml_counterfactual": 0.99950126438941
+  },
+  {
+   "seq": 11179,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999660041,
+   "ml_counterfactual": 0.9999941603985295
+  },
+  {
+   "seq": 11221,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9995029072506796
+  },
+  {
+   "seq": 11231,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991796045886,
+   "ml_counterfactual": 0.9995025756394988
+  },
+  {
+   "seq": 11251,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960346676672,
+   "ml_counterfactual": 0.9987226365779092
+  },
+  {
+   "seq": 11267,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989078866885,
+   "ml_counterfactual": 0.9987693610218411
+  },
+  {
+   "seq": 11285,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9985015516419251
+  },
+  {
+   "seq": 11312,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985483,
+   "ml_counterfactual": 0.9999995764095362
+  },
+  {
+   "seq": 11323,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999988678964867,
+   "ml_counterfactual": 0.9992826315616443
+  },
+  {
+   "seq": 11349,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995012409359527
+  },
+  {
+   "seq": 11379,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959863968939,
+   "ml_counterfactual": 0.9976398841589372
+  },
+  {
+   "seq": 11409,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999981897105413,
+   "ml_counterfactual": 0.998857081271806
+  },
+  {
+   "seq": 11450,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985994429178972
+  },
+  {
+   "seq": 11487,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996355151
+  },
+  {
+   "seq": 11489,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959501787327,
+   "ml_counterfactual": 0.9873245196251801
+  },
+  {
+   "seq": 11543,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959501787327,
+   "ml_counterfactual": 0.9886517294172512
+  },
+  {
+   "seq": 11547,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997823455474,
+   "ml_counterfactual": 0.9995038827716767
+  },
+  {
+   "seq": 11568,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987677320809,
+   "ml_counterfactual": 0.9984906749963908
+  },
+  {
+   "seq": 11583,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564036015,
+   "ml_counterfactual": 0.9995062501771935
+  },
+  {
+   "seq": 11594,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999998556335,
+   "ml_counterfactual": 0.9999838402969435
+  },
+  {
+   "seq": 11597,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999932578552072
+  },
+  {
+   "seq": 11606,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9985512364585934
+  },
+  {
+   "seq": 11608,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999993168847381,
+   "ml_counterfactual": 0.9995008088368565
+  },
+  {
+   "seq": 11626,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966011782
+  },
+  {
+   "seq": 11688,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9995025905848531
+  },
+  {
+   "seq": 11711,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266614888,
+   "ml_counterfactual": 0.9995054055663155
+  },
+  {
+   "seq": 11729,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999858734298,
+   "ml_counterfactual": 0.9997618739614125
+  },
+  {
+   "seq": 11730,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999963827149329,
+   "ml_counterfactual": 0.9890339316166471
+  },
+  {
+   "seq": 11736,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988994272658,
+   "ml_counterfactual": 0.998554779325383
+  },
+  {
+   "seq": 11802,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996405623797628
+  },
+  {
+   "seq": 11844,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991746408806,
+   "ml_counterfactual": 0.9990646335397433
+  },
+  {
+   "seq": 11855,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330461,
+   "ml_counterfactual": 0.9999914165298531
+  },
+  {
+   "seq": 11883,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999975512230449
+  },
+  {
+   "seq": 11903,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999999098922038,
+   "ml_counterfactual": 0.9992993858690573
+  },
+  {
+   "seq": 11960,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999999098922038,
+   "ml_counterfactual": 0.9993802703905718
+  },
+  {
+   "seq": 11970,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742947,
+   "ml_counterfactual": 0.9999954386592708
+  },
+  {
+   "seq": 11992,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988924428168,
+   "ml_counterfactual": 0.9922829988756864
+  },
+  {
+   "seq": 12033,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988003089011,
+   "ml_counterfactual": 0.999071406824266
+  },
+  {
+   "seq": 12045,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991718684718,
+   "ml_counterfactual": 0.9988529460816251
+  },
+  {
+   "seq": 12047,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999928,
+   "ml_counterfactual": 0.9999999945192085
+  },
+  {
+   "seq": 12054,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999928,
+   "ml_counterfactual": 0.9999999944245508
+  },
+  {
+   "seq": 12073,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9985969751318737
+  },
+  {
+   "seq": 12081,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974186263,
+   "ml_counterfactual": 0.9998919210716485
+  },
+  {
+   "seq": 12112,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996088,
+   "ml_counterfactual": 0.9999998349599318
+  },
+  {
+   "seq": 12126,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999997512375,
+   "ml_counterfactual": 0.9999719297916432
+  },
+  {
+   "seq": 12167,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989129655557,
+   "ml_counterfactual": 0.9989076568753683
+  },
+  {
+   "seq": 12172,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9986063326868201
+  },
+  {
+   "seq": 12224,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.999998867089304,
+   "ml_counterfactual": 0.9992355996555276
+  },
+  {
+   "seq": 12239,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995732233
+  },
+  {
+   "seq": 12279,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999954394248926
+  },
+  {
+   "seq": 12280,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999996182463,
+   "ml_counterfactual": 0.9999533155025119
+  },
+  {
+   "seq": 12287,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999597,
+   "ml_counterfactual": 0.9999999800530938
+  },
+  {
+   "seq": 12296,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999960089242166,
+   "ml_counterfactual": 0.9985527541581959
+  },
+  {
+   "seq": 12298,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990544494264154
+  },
+  {
+   "seq": 12327,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564435464,
+   "ml_counterfactual": 0.999507194551551
+  },
+  {
+   "seq": 12383,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991746408806,
+   "ml_counterfactual": 0.9989683386313052
+  },
+  {
+   "seq": 12390,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9984602972526535
+  },
+  {
+   "seq": 12406,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999997389324714,
+   "ml_counterfactual": 0.9995028663279475
+  },
+  {
+   "seq": 12458,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999932893956222
+  },
+  {
+   "seq": 12486,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999999098922038,
+   "ml_counterfactual": 0.9995011861609288
+  },
+  {
+   "seq": 12518,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997823455474,
+   "ml_counterfactual": 0.9995041807610523
+  },
+  {
+   "seq": 12549,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996116246021098
+  },
+  {
+   "seq": 12559,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991753015538,
+   "ml_counterfactual": 0.9990809050410147
+  },
+  {
+   "seq": 12577,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564435464,
+   "ml_counterfactual": 0.9995061362095459
+  },
+  {
+   "seq": 12612,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817687971,
+   "ml_counterfactual": 0.9996105981672516
+  },
+  {
+   "seq": 12652,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990799808773,
+   "ml_counterfactual": 0.9995011526403448
+  },
+  {
+   "seq": 12653,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9988829335264495
+  },
+  {
+   "seq": 12698,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963750023074,
+   "ml_counterfactual": 0.9873355085410096
+  },
+  {
+   "seq": 12705,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995012865946605
+  },
+  {
+   "seq": 12768,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999975488397821
+  },
+  {
+   "seq": 12821,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988691867846,
+   "ml_counterfactual": 0.9995000181520927
+  },
+  {
+   "seq": 12891,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962517294942,
+   "ml_counterfactual": 0.9903255431818407
+  },
+  {
+   "seq": 12893,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997711,
+   "ml_counterfactual": 0.9999999046842333
+  },
+  {
+   "seq": 12896,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999972693647822,
+   "ml_counterfactual": 0.9870725001367291
+  },
+  {
+   "seq": 12956,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996162442057877
+  },
+  {
+   "seq": 12967,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997228
+  },
+  {
+   "seq": 12968,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989084186107,
+   "ml_counterfactual": 0.9988049758748223
+  },
+  {
+   "seq": 12991,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999165410954,
+   "ml_counterfactual": 0.9986471160049548
+  },
+  {
+   "seq": 13001,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991753015538,
+   "ml_counterfactual": 0.9988201495363365
+  },
+  {
+   "seq": 13005,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962893034522,
+   "ml_counterfactual": 0.9986053837450815
+  },
+  {
+   "seq": 13135,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985918784831007
+  },
+  {
+   "seq": 13138,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.998911227637571
+  },
+  {
+   "seq": 13166,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999997512375,
+   "ml_counterfactual": 0.9999683098776522
+  },
+  {
+   "seq": 13192,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973208498107,
+   "ml_counterfactual": 0.9985448162583128
+  },
+  {
+   "seq": 13193,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982574265437,
+   "ml_counterfactual": 0.9824781507392504
+  },
+  {
+   "seq": 13197,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.999998897195467,
+   "ml_counterfactual": 0.9985319827756151
+  },
+  {
+   "seq": 13209,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988775314419,
+   "ml_counterfactual": 0.9995001414565629
+  },
+  {
+   "seq": 13215,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999928,
+   "ml_counterfactual": 0.9999999944889396
+  },
+  {
+   "seq": 13223,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962893034522,
+   "ml_counterfactual": 0.9986277485753805
+  },
+  {
+   "seq": 13230,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330067,
+   "ml_counterfactual": 0.9999908166893664
+  },
+  {
+   "seq": 13242,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9987340841487911
+  },
+  {
+   "seq": 13281,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.9998104568763795
+  },
+  {
+   "seq": 13288,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999534851173,
+   "ml_counterfactual": 0.9995102813284897
+  },
+  {
+   "seq": 13362,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960346676672,
+   "ml_counterfactual": 0.9986856838897743
+  },
+  {
+   "seq": 13401,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999960089242166,
+   "ml_counterfactual": 0.9985681311999174
+  },
+  {
+   "seq": 13430,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837575261,
+   "ml_counterfactual": 0.9995062991640011
+  },
+  {
+   "seq": 13444,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999963071551348,
+   "ml_counterfactual": 0.9989362144625251
+  },
+  {
+   "seq": 13500,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999993561561238,
+   "ml_counterfactual": 0.9995007359624525
+  },
+  {
+   "seq": 13508,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988834537314,
+   "ml_counterfactual": 0.9995000055514486
+  },
+  {
+   "seq": 13516,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991746408806,
+   "ml_counterfactual": 0.9990660391972517
+  },
+  {
+   "seq": 13517,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999986173606,
+   "ml_counterfactual": 0.999904276311497
+  },
+  {
+   "seq": 13527,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992405109689,
+   "ml_counterfactual": 0.9995023960124013
+  },
+  {
+   "seq": 13550,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999881,
+   "ml_counterfactual": 0.9999999916164106
+  },
+  {
+   "seq": 13563,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9942282418679022
+  },
+  {
+   "seq": 13578,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960317783974,
+   "ml_counterfactual": 0.9987108088231526
+  },
+  {
+   "seq": 13611,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974175213,
+   "ml_counterfactual": 0.9998878780809257
+  },
+  {
+   "seq": 13668,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999946271,
+   "ml_counterfactual": 0.9999996554651577
+  },
+  {
+   "seq": 13764,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999990646359574,
+   "ml_counterfactual": 0.9994036224427274
+  },
+  {
+   "seq": 13769,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.999998897195467,
+   "ml_counterfactual": 0.9985836513767121
+  },
+  {
+   "seq": 13868,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128428957,
+   "ml_counterfactual": 0.9995069052061089
+  },
+  {
+   "seq": 13928,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996088,
+   "ml_counterfactual": 0.9999998321426213
+  },
+  {
+   "seq": 13944,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988721512718,
+   "ml_counterfactual": 0.9993909726735287
+  },
+  {
+   "seq": 13946,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959899186067,
+   "ml_counterfactual": 0.9981743689115298
+  },
+  {
+   "seq": 13947,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974175213,
+   "ml_counterfactual": 0.9998848997272726
+  },
+  {
+   "seq": 13977,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973208498107,
+   "ml_counterfactual": 0.9986064635041149
+  },
+  {
+   "seq": 13984,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999903714053
+  },
+  {
+   "seq": 13987,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989018981357,
+   "ml_counterfactual": 0.9987073520315053
+  },
+  {
+   "seq": 14016,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992429827828,
+   "ml_counterfactual": 0.9995012409824837
+  },
+  {
+   "seq": 14057,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999955447761104
+  },
+  {
+   "seq": 14063,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999956062324943
+  },
+  {
+   "seq": 14065,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997821390074,
+   "ml_counterfactual": 0.9995039812074399
+  },
+  {
+   "seq": 14068,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996160973832504
+  },
+  {
+   "seq": 14075,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.9999989290186025,
+   "ml_counterfactual": 0.9994195880487926
+  },
+  {
+   "seq": 14080,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.9997829934172937
+  },
+  {
+   "seq": 14239,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999975454264185
+  },
+  {
+   "seq": 14246,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999955172206413
+  },
+  {
+   "seq": 14260,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.999797846370206
+  },
+  {
+   "seq": 14296,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991662213751,
+   "ml_counterfactual": 0.9981411450449232
+  },
+  {
+   "seq": 14299,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.9975659605492325
+  },
+  {
+   "seq": 14304,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9985876319601109
+  },
+  {
+   "seq": 14344,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999999098922038,
+   "ml_counterfactual": 0.9992290511448303
+  },
+  {
+   "seq": 14345,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999535373533,
+   "ml_counterfactual": 0.9995097402202394
+  },
+  {
+   "seq": 14428,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9985715357094387
+  },
+  {
+   "seq": 14431,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974175213,
+   "ml_counterfactual": 0.9998866917321212
+  },
+  {
+   "seq": 14433,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330461,
+   "ml_counterfactual": 0.9999910988074127
+  },
+  {
+   "seq": 14454,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.999999990405908
+  },
+  {
+   "seq": 14478,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988644661431,
+   "ml_counterfactual": 0.9995001634279355
+  },
+  {
+   "seq": 14483,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991753015538,
+   "ml_counterfactual": 0.999031661780092
+  },
+  {
+   "seq": 14512,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991753015538,
+   "ml_counterfactual": 0.998903371134563
+  },
+  {
+   "seq": 14588,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885153,
+   "ml_counterfactual": 0.9999974474385498
+  },
+  {
+   "seq": 14607,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999310573823,
+   "ml_counterfactual": 0.9995015587317451
+  },
+  {
+   "seq": 14627,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999858734298,
+   "ml_counterfactual": 0.9997648462912069
+  },
+  {
+   "seq": 14653,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995003979425934
+  },
+  {
+   "seq": 14709,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990799808773,
+   "ml_counterfactual": 0.9995008042298307
+  },
+  {
+   "seq": 14717,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999665645775,
+   "ml_counterfactual": 0.9995066121174017
+  },
+  {
+   "seq": 14742,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991718684718,
+   "ml_counterfactual": 0.998659222465
+  },
+  {
+   "seq": 14784,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902668811,
+   "ml_counterfactual": 0.9998065370672949
+  },
+  {
+   "seq": 14811,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991704733352,
+   "ml_counterfactual": 0.9988831846100532
+  },
+  {
+   "seq": 14836,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996435786
+  },
+  {
+   "seq": 14840,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959646092597,
+   "ml_counterfactual": 0.992390216027534
+  },
+  {
+   "seq": 14893,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988994272658,
+   "ml_counterfactual": 0.998559798857398
+  },
+  {
+   "seq": 14899,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999977141021339,
+   "ml_counterfactual": 0.9993697110908585
+  },
+  {
+   "seq": 14901,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.999777945048413
+  },
+  {
+   "seq": 14925,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999933006747471
+  },
+  {
+   "seq": 14957,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999399,
+   "ml_counterfactual": 0.9999999619011719
+  },
+  {
+   "seq": 14961,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960317783974,
+   "ml_counterfactual": 0.998835892304096
+  },
+  {
+   "seq": 15039,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9988724115557384
+  },
+  {
+   "seq": 15060,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999928,
+   "ml_counterfactual": 0.999999994376658
+  },
+  {
+   "seq": 15152,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651722268,
+   "ml_counterfactual": 0.9995104634790369
+  },
+  {
+   "seq": 15175,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9989551889674113
+  },
+  {
+   "seq": 15191,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999990517515,
+   "ml_counterfactual": 0.9999295235241938
+  },
+  {
+   "seq": 15195,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999535373533,
+   "ml_counterfactual": 0.9995096765928655
+  },
+  {
+   "seq": 15205,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988644661431,
+   "ml_counterfactual": 0.9994743386652681
+  },
+  {
+   "seq": 15242,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992405109689,
+   "ml_counterfactual": 0.99950134279604
+  },
+  {
+   "seq": 15253,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9977262424561546
+  },
+  {
+   "seq": 15266,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999963827149329,
+   "ml_counterfactual": 0.9888429186193981
+  },
+  {
+   "seq": 15287,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999399,
+   "ml_counterfactual": 0.9999999638754641
+  },
+  {
+   "seq": 15291,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999963827149329,
+   "ml_counterfactual": 0.9891626496858742
+  },
+  {
+   "seq": 15328,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989021984783,
+   "ml_counterfactual": 0.9986191342428317
+  },
+  {
+   "seq": 15359,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999997724789
+  },
+  {
+   "seq": 15383,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999399,
+   "ml_counterfactual": 0.9999999662511926
+  },
+  {
+   "seq": 15394,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9982907184949499
+  },
+  {
+   "seq": 15398,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985528431945818
+  },
+  {
+   "seq": 15420,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999310573823,
+   "ml_counterfactual": 0.9995011800588802
+  },
+  {
+   "seq": 15461,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991545619394,
+   "ml_counterfactual": 0.9993201781972706
+  },
+  {
+   "seq": 15478,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988721512718,
+   "ml_counterfactual": 0.9990919449660352
+  },
+  {
+   "seq": 15543,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989018981357,
+   "ml_counterfactual": 0.999502761990233
+  },
+  {
+   "seq": 15583,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9942103750780296
+  },
+  {
+   "seq": 15626,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988607556403,
+   "ml_counterfactual": 0.9995000097827043
+  },
+  {
+   "seq": 15658,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999928,
+   "ml_counterfactual": 0.9999999989475813
+  },
+  {
+   "seq": 15667,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999872123162,
+   "ml_counterfactual": 0.9994837557624002
+  },
+  {
+   "seq": 15675,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885087,
+   "ml_counterfactual": 0.9999974805741724
+  },
+  {
+   "seq": 15700,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992429827828,
+   "ml_counterfactual": 0.9995012446584368
+  },
+  {
+   "seq": 15722,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989129655557,
+   "ml_counterfactual": 0.9988624264410892
+  },
+  {
+   "seq": 15739,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988607556403,
+   "ml_counterfactual": 0.999494443774872
+  },
+  {
+   "seq": 15756,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9985823925495309
+  },
+  {
+   "seq": 15779,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999997512375,
+   "ml_counterfactual": 0.9999684397353824
+  },
+  {
+   "seq": 15798,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999963071551348,
+   "ml_counterfactual": 0.9987567566747055
+  },
+  {
+   "seq": 15885,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999975464669668
+  },
+  {
+   "seq": 15967,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902668811,
+   "ml_counterfactual": 0.9999211550093402
+  },
+  {
+   "seq": 16011,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.999029605206411
+  },
+  {
+   "seq": 16040,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.999500734305179
+  },
+  {
+   "seq": 16051,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988958780128,
+   "ml_counterfactual": 0.9985128798423365
+  },
+  {
+   "seq": 16099,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266142892,
+   "ml_counterfactual": 0.9995061682418835
+  },
+  {
+   "seq": 16121,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9987769314537781
+  },
+  {
+   "seq": 16123,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995665735
+  },
+  {
+   "seq": 16165,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999969137916812,
+   "ml_counterfactual": 0.9987555758103518
+  },
+  {
+   "seq": 16174,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999742947,
+   "ml_counterfactual": 0.9999953821431381
+  },
+  {
+   "seq": 16176,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959863968939,
+   "ml_counterfactual": 0.996060319357986
+  },
+  {
+   "seq": 16188,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651722268,
+   "ml_counterfactual": 0.9997694610837394
+  },
+  {
+   "seq": 16211,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999932363095287
+  },
+  {
+   "seq": 16284,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962517294942,
+   "ml_counterfactual": 0.9889067349750423
+  },
+  {
+   "seq": 16286,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989129655557,
+   "ml_counterfactual": 0.998870467586351
+  },
+  {
+   "seq": 16294,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988003089011,
+   "ml_counterfactual": 0.9991567910314192
+  },
+  {
+   "seq": 16309,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999962626704482,
+   "ml_counterfactual": 0.9992249567153341
+  },
+  {
+   "seq": 16312,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997711,
+   "ml_counterfactual": 0.9999999023572647
+  },
+  {
+   "seq": 16369,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991718684718,
+   "ml_counterfactual": 0.9987203173019895
+  },
+  {
+   "seq": 16377,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.999999989444728
+  },
+  {
+   "seq": 16390,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988775314419,
+   "ml_counterfactual": 0.9995000059063088
+  },
+  {
+   "seq": 16418,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999659899,
+   "ml_counterfactual": 0.9999939608655407
+  },
+  {
+   "seq": 16428,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999977066724821,
+   "ml_counterfactual": 0.9985965191003453
+  },
+  {
+   "seq": 16455,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999969137916812,
+   "ml_counterfactual": 0.9986825863293364
+  },
+  {
+   "seq": 16456,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982596483372,
+   "ml_counterfactual": 0.9859415938936864
+  },
+  {
+   "seq": 16514,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999966285001054,
+   "ml_counterfactual": 0.9990048630896539
+  },
+  {
+   "seq": 16527,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9941856981676981
+  },
+  {
+   "seq": 16563,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960104463865,
+   "ml_counterfactual": 0.9986190441613009
+  },
+  {
+   "seq": 16574,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973370994326,
+   "ml_counterfactual": 0.9987589535193735
+  },
+  {
+   "seq": 16585,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999974474306228,
+   "ml_counterfactual": 0.9990450092446168
+  },
+  {
+   "seq": 16606,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999659899,
+   "ml_counterfactual": 0.9999941923049432
+  },
+  {
+   "seq": 16637,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974186263,
+   "ml_counterfactual": 0.9998865424514104
+  },
+  {
+   "seq": 16692,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982574265437,
+   "ml_counterfactual": 0.984614487769848
+  },
+  {
+   "seq": 16720,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991694306276,
+   "ml_counterfactual": 0.9985791497637301
+  },
+  {
+   "seq": 16769,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837904941,
+   "ml_counterfactual": 0.9995067563808302
+  },
+  {
+   "seq": 16792,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966004758
+  },
+  {
+   "seq": 16846,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991694306276,
+   "ml_counterfactual": 0.9987523274504454
+  },
+  {
+   "seq": 16848,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999996182463,
+   "ml_counterfactual": 0.9999552704385009
+  },
+  {
+   "seq": 16901,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985487,
+   "ml_counterfactual": 0.9999998854296995
+  },
+  {
+   "seq": 16906,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999535373533,
+   "ml_counterfactual": 0.9995065269971993
+  },
+  {
+   "seq": 16915,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989087175531,
+   "ml_counterfactual": 0.9987791639329079
+  },
+  {
+   "seq": 16919,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962893034522,
+   "ml_counterfactual": 0.998529387656113
+  },
+  {
+   "seq": 16922,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999946271,
+   "ml_counterfactual": 0.9999996336339123
+  },
+  {
+   "seq": 16973,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988924428168,
+   "ml_counterfactual": 0.9913790105330367
+  },
+  {
+   "seq": 16986,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.998521870377256
+  },
+  {
+   "seq": 17004,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999986173606,
+   "ml_counterfactual": 0.9998907376560533
+  },
+  {
+   "seq": 17063,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999310573823,
+   "ml_counterfactual": 0.9995018328037082
+  },
+  {
+   "seq": 17071,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999998467094883,
+   "ml_counterfactual": 0.9992725763050379
+  },
+  {
+   "seq": 17093,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999989048636015,
+   "ml_counterfactual": 0.999017045964924
+  },
+  {
+   "seq": 17114,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999990646359574,
+   "ml_counterfactual": 0.9994058453726359
+  },
+  {
+   "seq": 17122,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988593402703,
+   "ml_counterfactual": 0.9994825523995261
+  },
+  {
+   "seq": 17147,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9986434582966558
+  },
+  {
+   "seq": 17154,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999998993,
+   "ml_counterfactual": 0.9999999473288946
+  },
+  {
+   "seq": 17190,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564435464,
+   "ml_counterfactual": 0.9995069737278267
+  },
+  {
+   "seq": 17232,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999996265439197,
+   "ml_counterfactual": 0.9956300614939014
+  },
+  {
+   "seq": 17250,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999533172914,
+   "ml_counterfactual": 0.9995079570527406
+  },
+  {
+   "seq": 17270,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982596483372,
+   "ml_counterfactual": 0.9859477344558085
+  },
+  {
+   "seq": 17286,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9980672105861493
+  },
+  {
+   "seq": 17316,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985487,
+   "ml_counterfactual": 0.9999995834932964
+  },
+  {
+   "seq": 17348,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999997389324714,
+   "ml_counterfactual": 0.9995023869505918
+  },
+  {
+   "seq": 17355,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988593402703,
+   "ml_counterfactual": 0.9993918633329709
+  },
+  {
+   "seq": 17378,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999999492
+  },
+  {
+   "seq": 17379,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999881,
+   "ml_counterfactual": 0.9999999916573401
+  },
+  {
+   "seq": 17397,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988929166796,
+   "ml_counterfactual": 0.9995025596442152
+  },
+  {
+   "seq": 17441,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999998467094883,
+   "ml_counterfactual": 0.9993437560117592
+  },
+  {
+   "seq": 17512,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.99999892968967,
+   "ml_counterfactual": 0.9990934312791098
+  },
+  {
+   "seq": 17544,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9988679847701495
+  },
+  {
+   "seq": 17614,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990183234991198
+  },
+  {
+   "seq": 17615,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817687971,
+   "ml_counterfactual": 0.9996099717048025
+  },
+  {
+   "seq": 17690,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982923513792,
+   "ml_counterfactual": 0.9985181992811495
+  },
+  {
+   "seq": 17698,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999872123162,
+   "ml_counterfactual": 0.9995031299608932
+  },
+  {
+   "seq": 17702,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990799808773,
+   "ml_counterfactual": 0.9995011815898873
+  },
+  {
+   "seq": 17716,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991704733352,
+   "ml_counterfactual": 0.9989196776833061
+  },
+  {
+   "seq": 17731,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.999998860530583,
+   "ml_counterfactual": 0.9995002340788214
+  },
+  {
+   "seq": 17777,
+   "attack_group": "websocket",
+   "ml_recorded": 0.999996636707382,
+   "ml_counterfactual": 0.9991099596966405
+  },
+  {
+   "seq": 17779,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995003420490869
+  },
+  {
+   "seq": 17833,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991699437134,
+   "ml_counterfactual": 0.9986388066556217
+  },
+  {
+   "seq": 17902,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999895121594
+  },
+  {
+   "seq": 17959,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999872123162,
+   "ml_counterfactual": 0.9993934834818662
+  },
+  {
+   "seq": 17963,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9944109520988699
+  },
+  {
+   "seq": 18024,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988630488205,
+   "ml_counterfactual": 0.9994848326377491
+  },
+  {
+   "seq": 18053,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999963071551348,
+   "ml_counterfactual": 0.9988571651820053
+  },
+  {
+   "seq": 18056,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.999998897195467,
+   "ml_counterfactual": 0.9981606568657413
+  },
+  {
+   "seq": 18057,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988691867846,
+   "ml_counterfactual": 0.9995001468472605
+  },
+  {
+   "seq": 18067,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988721512718,
+   "ml_counterfactual": 0.9995032219861719
+  },
+  {
+   "seq": 18089,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.999999999994624,
+   "ml_counterfactual": 0.999998600616882
+  },
+  {
+   "seq": 18114,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988924428168,
+   "ml_counterfactual": 0.9945236478608661
+  },
+  {
+   "seq": 18141,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996279199983,
+   "ml_counterfactual": 0.9995102533176998
+  },
+  {
+   "seq": 18147,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885153,
+   "ml_counterfactual": 0.9999993105881574
+  },
+  {
+   "seq": 18159,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999881,
+   "ml_counterfactual": 0.9999999916602372
+  },
+  {
+   "seq": 18257,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997711,
+   "ml_counterfactual": 0.9999998982354484
+  },
+  {
+   "seq": 18268,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.9998040330147163
+  },
+  {
+   "seq": 18273,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999597,
+   "ml_counterfactual": 0.999999995916124
+  },
+  {
+   "seq": 18305,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999998467094883,
+   "ml_counterfactual": 0.9992541908966569
+  },
+  {
+   "seq": 18309,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999988899092697,
+   "ml_counterfactual": 0.9994839692018326
+  },
+  {
+   "seq": 18311,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966092707
+  },
+  {
+   "seq": 18331,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960071640196,
+   "ml_counterfactual": 0.9985690563272844
+  },
+  {
+   "seq": 18348,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.999997563664107
+  },
+  {
+   "seq": 18360,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988935394305,
+   "ml_counterfactual": 0.9936057064349654
+  },
+  {
+   "seq": 18370,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991694306276,
+   "ml_counterfactual": 0.9988322594801977
+  },
+  {
+   "seq": 18374,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992405109689,
+   "ml_counterfactual": 0.9995013080712258
+  },
+  {
+   "seq": 18376,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999962893034522,
+   "ml_counterfactual": 0.9987098589855755
+  },
+  {
+   "seq": 18392,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989087175531,
+   "ml_counterfactual": 0.9987789792906543
+  },
+  {
+   "seq": 18394,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974175213,
+   "ml_counterfactual": 0.9998887482916924
+  },
+  {
+   "seq": 18395,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988890638493,
+   "ml_counterfactual": 0.9885356315968089
+  },
+  {
+   "seq": 18437,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999998993,
+   "ml_counterfactual": 0.9999999432978148
+  },
+  {
+   "seq": 18471,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999972872604
+  },
+  {
+   "seq": 18472,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999935265501627
+  },
+  {
+   "seq": 18510,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651320289,
+   "ml_counterfactual": 0.9995115464237713
+  },
+  {
+   "seq": 18547,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995548471
+  },
+  {
+   "seq": 18594,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999872123162,
+   "ml_counterfactual": 0.9995005399352613
+  },
+  {
+   "seq": 18621,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990245428049688
+  },
+  {
+   "seq": 18624,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9988550493609462
+  },
+  {
+   "seq": 18650,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999996265439197,
+   "ml_counterfactual": 0.9923522346864324
+  },
+  {
+   "seq": 18659,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266614888,
+   "ml_counterfactual": 0.999506547335335
+  },
+  {
+   "seq": 18669,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991662213751,
+   "ml_counterfactual": 0.9986843498868183
+  },
+  {
+   "seq": 18672,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999976030008189
+  },
+  {
+   "seq": 18695,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991552126029,
+   "ml_counterfactual": 0.9993183076224156
+  },
+  {
+   "seq": 18701,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996278287676,
+   "ml_counterfactual": 0.9995113025902157
+  },
+  {
+   "seq": 18742,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996085,
+   "ml_counterfactual": 0.9999998513787542
+  },
+  {
+   "seq": 18762,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.999998860530583,
+   "ml_counterfactual": 0.9994432418428162
+  },
+  {
+   "seq": 18770,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999998556335,
+   "ml_counterfactual": 0.9999826813479166
+  },
+  {
+   "seq": 18832,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999988899092697,
+   "ml_counterfactual": 0.9995035433222146
+  },
+  {
+   "seq": 18833,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.9999989290186025,
+   "ml_counterfactual": 0.9990946991833303
+  },
+  {
+   "seq": 18862,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999977141021339,
+   "ml_counterfactual": 0.9992984298229747
+  },
+  {
+   "seq": 18867,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9986307051905725
+  },
+  {
+   "seq": 18872,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988630488205,
+   "ml_counterfactual": 0.9994277174129441
+  },
+  {
+   "seq": 18886,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988997281192,
+   "ml_counterfactual": 0.9985936177036386
+  },
+  {
+   "seq": 18898,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999988678964867,
+   "ml_counterfactual": 0.9992420035890471
+  },
+  {
+   "seq": 19053,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991662213751,
+   "ml_counterfactual": 0.9985690298005132
+  },
+  {
+   "seq": 19068,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999978749666232
+  },
+  {
+   "seq": 19089,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989078866885,
+   "ml_counterfactual": 0.9987444943885427
+  },
+  {
+   "seq": 19107,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999997512375,
+   "ml_counterfactual": 0.9999705208547894
+  },
+  {
+   "seq": 19119,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999991430996459,
+   "ml_counterfactual": 0.999472445707268
+  },
+  {
+   "seq": 19125,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960592357785,
+   "ml_counterfactual": 0.9988223513081157
+  },
+  {
+   "seq": 19161,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988929166796,
+   "ml_counterfactual": 0.9931243289412077
+  },
+  {
+   "seq": 19173,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999986173606,
+   "ml_counterfactual": 0.9999016706975035
+  },
+  {
+   "seq": 19177,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989011492171,
+   "ml_counterfactual": 0.9986576832652754
+  },
+  {
+   "seq": 19196,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.999641389112263
+  },
+  {
+   "seq": 19204,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999165410954,
+   "ml_counterfactual": 0.9986640061924335
+  },
+  {
+   "seq": 19233,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988834537314,
+   "ml_counterfactual": 0.9994649705034707
+  },
+  {
+   "seq": 19261,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999966285001054,
+   "ml_counterfactual": 0.9990141352889709
+  },
+  {
+   "seq": 19279,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999660041,
+   "ml_counterfactual": 0.9999939311805608
+  },
+  {
+   "seq": 19285,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989185703441,
+   "ml_counterfactual": 0.9990446803267546
+  },
+  {
+   "seq": 19296,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999665645775,
+   "ml_counterfactual": 0.9995041513796293
+  },
+  {
+   "seq": 19319,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999146972149,
+   "ml_counterfactual": 0.9995011801731749
+  },
+  {
+   "seq": 19343,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999902616469,
+   "ml_counterfactual": 0.9999217951050634
+  },
+  {
+   "seq": 19344,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9985754656779663
+  },
+  {
+   "seq": 19356,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991699437134,
+   "ml_counterfactual": 0.9988455322223377
+  },
+  {
+   "seq": 19368,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999981897105413,
+   "ml_counterfactual": 0.9992704313396639
+  },
+  {
+   "seq": 19390,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999994978593,
+   "ml_counterfactual": 0.9999586638195512
+  },
+  {
+   "seq": 19440,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330461,
+   "ml_counterfactual": 0.999990969250272
+  },
+  {
+   "seq": 19451,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990537523054942
+  },
+  {
+   "seq": 19493,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999955040298999
+  },
+  {
+   "seq": 19496,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999989048636015,
+   "ml_counterfactual": 0.9987214446648816
+  },
+  {
+   "seq": 19512,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9905383714908272
+  },
+  {
+   "seq": 19522,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999659899,
+   "ml_counterfactual": 0.9999939695517637
+  },
+  {
+   "seq": 19545,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9988890716620475
+  },
+  {
+   "seq": 19569,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998266614888,
+   "ml_counterfactual": 0.9995055502543964
+  },
+  {
+   "seq": 19656,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564036015,
+   "ml_counterfactual": 0.9995072115566177
+  },
+  {
+   "seq": 19683,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651320289,
+   "ml_counterfactual": 0.9995115258028353
+  },
+  {
+   "seq": 19712,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960346676672,
+   "ml_counterfactual": 0.998875157897744
+  },
+  {
+   "seq": 19714,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.999502885647163
+  },
+  {
+   "seq": 19767,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999998556335,
+   "ml_counterfactual": 0.9999840402580357
+  },
+  {
+   "seq": 19784,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9985141888115853
+  },
+  {
+   "seq": 19789,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999993168847381,
+   "ml_counterfactual": 0.9995007099592742
+  },
+  {
+   "seq": 19840,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837575261,
+   "ml_counterfactual": 0.9995066852325927
+  },
+  {
+   "seq": 19849,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989050950193,
+   "ml_counterfactual": 0.9986839554690663
+  },
+  {
+   "seq": 19853,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.999998867089304,
+   "ml_counterfactual": 0.9992760247290111
+  },
+  {
+   "seq": 19896,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988910441404,
+   "ml_counterfactual": 0.9994517825809199
+  },
+  {
+   "seq": 19902,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963701758151,
+   "ml_counterfactual": 0.9852788686530592
+  },
+  {
+   "seq": 19985,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9985641734355141
+  },
+  {
+   "seq": 20009,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973370994326,
+   "ml_counterfactual": 0.998638606485502
+  },
+  {
+   "seq": 20011,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9988539413581179
+  },
+  {
+   "seq": 20021,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999990517515,
+   "ml_counterfactual": 0.9999236920466077
+  },
+  {
+   "seq": 20161,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9935140336736061
+  },
+  {
+   "seq": 20176,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564036015,
+   "ml_counterfactual": 0.9995069034849117
+  },
+  {
+   "seq": 20179,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988630488205,
+   "ml_counterfactual": 0.999500191028897
+  },
+  {
+   "seq": 20181,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.9999999996322012
+  },
+  {
+   "seq": 20204,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999946271,
+   "ml_counterfactual": 0.9999986084321021
+  },
+  {
+   "seq": 20247,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999991430996459,
+   "ml_counterfactual": 0.9995012031039485
+  },
+  {
+   "seq": 20248,
+   "attack_group": "dos",
+   "ml_recorded": 0.999995981178956,
+   "ml_counterfactual": 0.9980612345341061
+  },
+  {
+   "seq": 20263,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999974470616572,
+   "ml_counterfactual": 0.999018937874146
+  },
+  {
+   "seq": 20286,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9987884502935837
+  },
+  {
+   "seq": 20367,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999977066724821,
+   "ml_counterfactual": 0.9985998967098294
+  },
+  {
+   "seq": 20374,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999793225026,
+   "ml_counterfactual": 0.9995011064395275
+  },
+  {
+   "seq": 20440,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988607556403,
+   "ml_counterfactual": 0.9995001296244101
+  },
+  {
+   "seq": 20453,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991746408806,
+   "ml_counterfactual": 0.9990274463381589
+  },
+  {
+   "seq": 20501,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999954532130813
+  },
+  {
+   "seq": 20522,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999975616596524
+  },
+  {
+   "seq": 20527,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960104463865,
+   "ml_counterfactual": 0.9986741443959161
+  },
+  {
+   "seq": 20539,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960346676672,
+   "ml_counterfactual": 0.9987204627264276
+  },
+  {
+   "seq": 20551,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999972693647822,
+   "ml_counterfactual": 0.9874753983373745
+  },
+  {
+   "seq": 20565,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966842504
+  },
+  {
+   "seq": 20568,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999399,
+   "ml_counterfactual": 0.9999999653439505
+  },
+  {
+   "seq": 20572,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988929166796,
+   "ml_counterfactual": 0.9965067077378849
+  },
+  {
+   "seq": 20578,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973370994326,
+   "ml_counterfactual": 0.9987868865080711
+  },
+  {
+   "seq": 20579,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982574265437,
+   "ml_counterfactual": 0.9828165491551397
+  },
+  {
+   "seq": 20597,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999960592357785,
+   "ml_counterfactual": 0.9988076829990122
+  },
+  {
+   "seq": 20679,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990439256491934
+  },
+  {
+   "seq": 20682,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988644661431,
+   "ml_counterfactual": 0.9995000277448262
+  },
+  {
+   "seq": 20724,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999962626704482,
+   "ml_counterfactual": 0.9992173114078569
+  },
+  {
+   "seq": 20731,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989246926562,
+   "ml_counterfactual": 0.9990939695373272
+  },
+  {
+   "seq": 20771,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999128428957,
+   "ml_counterfactual": 0.9995068593382371
+  },
+  {
+   "seq": 20773,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997821390074,
+   "ml_counterfactual": 0.9995041463809293
+  },
+  {
+   "seq": 20800,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991545619394,
+   "ml_counterfactual": 0.9993296136597436
+  },
+  {
+   "seq": 20826,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999969137916812,
+   "ml_counterfactual": 0.9987327398934619
+  },
+  {
+   "seq": 20833,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989021984783,
+   "ml_counterfactual": 0.9986198434980221
+  },
+  {
+   "seq": 20835,
+   "attack_group": "websocket",
+   "ml_recorded": 0.9999974474306228,
+   "ml_counterfactual": 0.9991634149875513
+  },
+  {
+   "seq": 20856,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999999146972149,
+   "ml_counterfactual": 0.9995014086681983
+  },
+  {
+   "seq": 20873,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985487,
+   "ml_counterfactual": 0.9999995836413433
+  },
+  {
+   "seq": 20933,
+   "attack_group": "dos",
+   "ml_recorded": 0.999999171019461,
+   "ml_counterfactual": 0.9988544246131807
+  },
+  {
+   "seq": 20975,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.999999999994624,
+   "ml_counterfactual": 0.9999985710006504
+  },
+  {
+   "seq": 20987,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330067,
+   "ml_counterfactual": 0.9999908558060547
+  },
+  {
+   "seq": 20996,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988003089011,
+   "ml_counterfactual": 0.9991653242417439
+  },
+  {
+   "seq": 21008,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959891256268,
+   "ml_counterfactual": 0.998522155751564
+  },
+  {
+   "seq": 21010,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999996444544568,
+   "ml_counterfactual": 0.9986348819874713
+  },
+  {
+   "seq": 21057,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9985102186796347
+  },
+  {
+   "seq": 21068,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959837479501,
+   "ml_counterfactual": 0.9959666156043514
+  },
+  {
+   "seq": 21129,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991704733352,
+   "ml_counterfactual": 0.9988053901503262
+  },
+  {
+   "seq": 21143,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991694306276,
+   "ml_counterfactual": 0.9988391009484988
+  },
+  {
+   "seq": 21150,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999998556335,
+   "ml_counterfactual": 0.9999840819210837
+  },
+  {
+   "seq": 21159,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.999998860530583,
+   "ml_counterfactual": 0.9995001161470037
+  },
+  {
+   "seq": 21188,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999999985483,
+   "ml_counterfactual": 0.9999995575070808
+  },
+  {
+   "seq": 21233,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964331790423,
+   "ml_counterfactual": 0.9987910184632798
+  },
+  {
+   "seq": 21266,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999660041,
+   "ml_counterfactual": 0.9999939712643511
+  },
+  {
+   "seq": 21274,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999981897105413,
+   "ml_counterfactual": 0.9988620466553648
+  },
+  {
+   "seq": 21286,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999665645775,
+   "ml_counterfactual": 0.9995031301192586
+  },
+  {
+   "seq": 21291,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992405109689,
+   "ml_counterfactual": 0.9995011148476435
+  },
+  {
+   "seq": 21347,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651722268,
+   "ml_counterfactual": 0.9997693721636423
+  },
+  {
+   "seq": 21399,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999989084186107,
+   "ml_counterfactual": 0.9989331961837881
+  },
+  {
+   "seq": 21411,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966879619
+  },
+  {
+   "seq": 21416,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997823455474,
+   "ml_counterfactual": 0.999504108944665
+  },
+  {
+   "seq": 21425,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959837479501,
+   "ml_counterfactual": 0.9983599727634023
+  },
+  {
+   "seq": 21458,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997243
+  },
+  {
+   "seq": 21473,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989162658399,
+   "ml_counterfactual": 0.9989717069837921
+  },
+  {
+   "seq": 21505,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999979249894398,
+   "ml_counterfactual": 0.998894885454366
+  },
+  {
+   "seq": 21513,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998837904941,
+   "ml_counterfactual": 0.9995065826673115
+  },
+  {
+   "seq": 21537,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964123836931,
+   "ml_counterfactual": 0.9946661346410928
+  },
+  {
+   "seq": 21549,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999998881020313,
+   "ml_counterfactual": 0.9995034709548876
+  },
+  {
+   "seq": 21619,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999992429827828,
+   "ml_counterfactual": 0.9995011415203269
+  },
+  {
+   "seq": 21660,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.999998881020313,
+   "ml_counterfactual": 0.9994487725592863
+  },
+  {
+   "seq": 21756,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991545619394,
+   "ml_counterfactual": 0.9993179344768196
+  },
+  {
+   "seq": 21780,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999534851173,
+   "ml_counterfactual": 0.9995101963329724
+  },
+  {
+   "seq": 21787,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999999817748322,
+   "ml_counterfactual": 0.9996131811801364
+  },
+  {
+   "seq": 21838,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996278287676,
+   "ml_counterfactual": 0.9995110973150909
+  },
+  {
+   "seq": 21914,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990799808773,
+   "ml_counterfactual": 0.9995011829686521
+  },
+  {
+   "seq": 22004,
+   "attack_group": "websocket",
+   "ml_recorded": 0.999996636707382,
+   "ml_counterfactual": 0.999114385435549
+  },
+  {
+   "seq": 22018,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999840468186,
+   "ml_counterfactual": 0.9996318878319242
+  },
+  {
+   "seq": 22116,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997712,
+   "ml_counterfactual": 0.9999998980966953
+  },
+  {
+   "seq": 22148,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999994978593,
+   "ml_counterfactual": 0.9999578507626881
+  },
+  {
+   "seq": 22296,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999996278287676,
+   "ml_counterfactual": 0.9995120984482968
+  },
+  {
+   "seq": 22297,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999987677320809,
+   "ml_counterfactual": 0.9986243064157609
+  },
+  {
+   "seq": 22318,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999932190649,
+   "ml_counterfactual": 0.9997805707942271
+  },
+  {
+   "seq": 22319,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963701758151,
+   "ml_counterfactual": 0.9848802911424351
+  },
+  {
+   "seq": 22362,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999966285001054,
+   "ml_counterfactual": 0.9989885661653074
+  },
+  {
+   "seq": 22375,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999990646359574,
+   "ml_counterfactual": 0.9993998705150982
+  },
+  {
+   "seq": 22377,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9987837712299399
+  },
+  {
+   "seq": 22406,
+   "attack_group": "dos",
+   "ml_recorded": 0.999995981178956,
+   "ml_counterfactual": 0.9961954401478611
+  },
+  {
+   "seq": 22433,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988721512718,
+   "ml_counterfactual": 0.9991871706616565
+  },
+  {
+   "seq": 22494,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988644661431,
+   "ml_counterfactual": 0.9993523517080164
+  },
+  {
+   "seq": 22500,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991552126029,
+   "ml_counterfactual": 0.999505007905619
+  },
+  {
+   "seq": 22522,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999996,
+   "ml_counterfactual": 0.999999999648234
+  },
+  {
+   "seq": 22556,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330067,
+   "ml_counterfactual": 0.9999910781509993
+  },
+  {
+   "seq": 22560,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960071640196,
+   "ml_counterfactual": 0.9986134399951745
+  },
+  {
+   "seq": 22586,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991704733352,
+   "ml_counterfactual": 0.99893925483861
+  },
+  {
+   "seq": 22641,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999977066724821,
+   "ml_counterfactual": 0.9986012203359902
+  },
+  {
+   "seq": 22729,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989078866885,
+   "ml_counterfactual": 0.9987478252153533
+  },
+  {
+   "seq": 22757,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988775314419,
+   "ml_counterfactual": 0.9990984169915109
+  },
+  {
+   "seq": 22789,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999981897105413,
+   "ml_counterfactual": 0.9988570343398261
+  },
+  {
+   "seq": 22814,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988929166796,
+   "ml_counterfactual": 0.9980153473041206
+  },
+  {
+   "seq": 22860,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988691867846,
+   "ml_counterfactual": 0.9993299227382408
+  },
+  {
+   "seq": 22880,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999990517515,
+   "ml_counterfactual": 0.9999276399313117
+  },
+  {
+   "seq": 22970,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.999999999999719
+  },
+  {
+   "seq": 22991,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999997389324714,
+   "ml_counterfactual": 0.9995045595052949
+  },
+  {
+   "seq": 22993,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996088,
+   "ml_counterfactual": 0.9999998312737605
+  },
+  {
+   "seq": 23050,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885087,
+   "ml_counterfactual": 0.9999974652833035
+  },
+  {
+   "seq": 23067,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564435464,
+   "ml_counterfactual": 0.9995062623954347
+  },
+  {
+   "seq": 23077,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999997823455474,
+   "ml_counterfactual": 0.9995037410123415
+  },
+  {
+   "seq": 23099,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988775314419,
+   "ml_counterfactual": 0.9995002753838298
+  },
+  {
+   "seq": 23148,
+   "attack_group": "xss",
+   "ml_recorded": 0.9999998564435464,
+   "ml_counterfactual": 0.9995067310923328
+  },
+  {
+   "seq": 23176,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999994978593,
+   "ml_counterfactual": 0.9999844074490313
+  },
+  {
+   "seq": 23193,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988834537314,
+   "ml_counterfactual": 0.9995001847778265
+  },
+  {
+   "seq": 23204,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988935394305,
+   "ml_counterfactual": 0.9936018706414363
+  },
+  {
+   "seq": 23226,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991545619394,
+   "ml_counterfactual": 0.999357168271349
+  },
+  {
+   "seq": 23238,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9983176410406406
+  },
+  {
+   "seq": 23251,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988924428168,
+   "ml_counterfactual": 0.9917224197392359
+  },
+  {
+   "seq": 23265,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988775314419,
+   "ml_counterfactual": 0.9994157835410316
+  },
+  {
+   "seq": 23332,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999974186263,
+   "ml_counterfactual": 0.9998882821197149
+  },
+  {
+   "seq": 23372,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989185703441,
+   "ml_counterfactual": 0.9992210336164897
+  },
+  {
+   "seq": 23402,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.999999165410954,
+   "ml_counterfactual": 0.9985418798492544
+  },
+  {
+   "seq": 23442,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999660041,
+   "ml_counterfactual": 0.9999940169003557
+  },
+  {
+   "seq": 23469,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.999999999994624,
+   "ml_counterfactual": 0.9999996261650012
+  },
+  {
+   "seq": 23492,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.999999999994624,
+   "ml_counterfactual": 0.9999986174312013
+  },
+  {
+   "seq": 23497,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999974470616572,
+   "ml_counterfactual": 0.9990672306037551
+  },
+  {
+   "seq": 23549,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963701758151,
+   "ml_counterfactual": 0.9847829802046408
+  },
+  {
+   "seq": 23558,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999999826,
+   "ml_counterfactual": 0.9999999978403722
+  },
+  {
+   "seq": 23566,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997639
+  },
+  {
+   "seq": 23589,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999979249894398,
+   "ml_counterfactual": 0.9988006657473042
+  },
+  {
+   "seq": 23697,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999533172914,
+   "ml_counterfactual": 0.999508090836292
+  },
+  {
+   "seq": 23724,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991731095179,
+   "ml_counterfactual": 0.9990369612319838
+  },
+  {
+   "seq": 23727,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988935394305,
+   "ml_counterfactual": 0.9962926234351597
+  },
+  {
+   "seq": 23814,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999966437269
+  },
+  {
+   "seq": 23835,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988593402703,
+   "ml_counterfactual": 0.9993337597012615
+  },
+  {
+   "seq": 23844,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9982233701008655
+  },
+  {
+   "seq": 23872,
+   "attack_group": "idor",
+   "ml_recorded": 0.9999973208498107,
+   "ml_counterfactual": 0.9985513294515991
+  },
+  {
+   "seq": 23912,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959899186067,
+   "ml_counterfactual": 0.9985017553207453
+  },
+  {
+   "seq": 23986,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999659899,
+   "ml_counterfactual": 0.999994303869771
+  },
+  {
+   "seq": 24020,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999998993,
+   "ml_counterfactual": 0.9999999488741342
+  },
+  {
+   "seq": 24023,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999974365166
+  },
+  {
+   "seq": 24024,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999824165,
+   "ml_counterfactual": 0.9999954359343919
+  },
+  {
+   "seq": 24035,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999990700075349,
+   "ml_counterfactual": 0.9995008280697667
+  },
+  {
+   "seq": 24080,
+   "attack_group": "ssrf_sensitive",
+   "ml_recorded": 0.99999892968967,
+   "ml_counterfactual": 0.9991294777750536
+  },
+  {
+   "seq": 24086,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999960089242166,
+   "ml_counterfactual": 0.9985743200250398
+  },
+  {
+   "seq": 24089,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996085,
+   "ml_counterfactual": 0.9999998311943418
+  },
+  {
+   "seq": 24091,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9983036393169477
+  },
+  {
+   "seq": 24097,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989028170732,
+   "ml_counterfactual": 0.9986196106795686
+  },
+  {
+   "seq": 24121,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999953,
+   "ml_counterfactual": 0.9999999969216399
+  },
+  {
+   "seq": 24131,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999975595802029
+  },
+  {
+   "seq": 24187,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999884736,
+   "ml_counterfactual": 0.9999976302496807
+  },
+  {
+   "seq": 24206,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999999999971054,
+   "ml_counterfactual": 0.9999934726802139
+  },
+  {
+   "seq": 24239,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999993168847381,
+   "ml_counterfactual": 0.9995013692749192
+  },
+  {
+   "seq": 24266,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999330461,
+   "ml_counterfactual": 0.9999909449524936
+  },
+  {
+   "seq": 24286,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.99999998588088,
+   "ml_counterfactual": 0.9997827879786079
+  },
+  {
+   "seq": 24315,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.99999998588088,
+   "ml_counterfactual": 0.9997779453104435
+  },
+  {
+   "seq": 24376,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9983036486916371
+  },
+  {
+   "seq": 24401,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995553791
+  },
+  {
+   "seq": 24460,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999597,
+   "ml_counterfactual": 0.9999999826989989
+  },
+  {
+   "seq": 24514,
+   "attack_group": "websocket",
+   "ml_recorded": 0.999996636707382,
+   "ml_counterfactual": 0.9991308355377846
+  },
+  {
+   "seq": 24551,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991718684718,
+   "ml_counterfactual": 0.9990221890094368
+  },
+  {
+   "seq": 24565,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999999651320289,
+   "ml_counterfactual": 0.9995114306743909
+  },
+  {
+   "seq": 24571,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988910441404,
+   "ml_counterfactual": 0.9995001134734249
+  },
+  {
+   "seq": 24586,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9982884416953689
+  },
+  {
+   "seq": 24592,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989050950193,
+   "ml_counterfactual": 0.999024831194028
+  },
+  {
+   "seq": 24597,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999999994,
+   "ml_counterfactual": 0.9999999995589482
+  },
+  {
+   "seq": 24608,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999991690531802,
+   "ml_counterfactual": 0.9986334638752408
+  },
+  {
+   "seq": 24612,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 1.0,
+   "ml_counterfactual": 0.9999999999997189
+  },
+  {
+   "seq": 24769,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999959837479501,
+   "ml_counterfactual": 0.9972772288945152
+  },
+  {
+   "seq": 24775,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999988973606727,
+   "ml_counterfactual": 0.9982907978673207
+  },
+  {
+   "seq": 24803,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.999996395058509,
+   "ml_counterfactual": 0.9907113128834941
+  },
+  {
+   "seq": 24804,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999989129655557,
+   "ml_counterfactual": 0.9990394904078591
+  },
+  {
+   "seq": 24826,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999963071551348,
+   "ml_counterfactual": 0.9986619927955679
+  },
+  {
+   "seq": 24851,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999999999597,
+   "ml_counterfactual": 0.9999999801601522
+  },
+  {
+   "seq": 24909,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999960089242166,
+   "ml_counterfactual": 0.998707068996331
+  },
+  {
+   "seq": 24911,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.9999988721512718,
+   "ml_counterfactual": 0.9993277644163976
+  },
+  {
+   "seq": 24927,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999988899092697,
+   "ml_counterfactual": 0.9995000934452166
+  },
+  {
+   "seq": 24944,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.999996265439197,
+   "ml_counterfactual": 0.9985568195974013
+  },
+  {
+   "seq": 25010,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959646092597,
+   "ml_counterfactual": 0.9920432675160273
+  },
+  {
+   "seq": 25031,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964849247915,
+   "ml_counterfactual": 0.9986102552646807
+  },
+  {
+   "seq": 25168,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963750023074,
+   "ml_counterfactual": 0.9871058907443531
+  },
+  {
+   "seq": 25169,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999989162658399,
+   "ml_counterfactual": 0.9995026874823213
+  },
+  {
+   "seq": 25210,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982596483372,
+   "ml_counterfactual": 0.9886362480989048
+  },
+  {
+   "seq": 25234,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999991699437134,
+   "ml_counterfactual": 0.9987167323059095
+  },
+  {
+   "seq": 25239,
+   "attack_group": "data_exposure",
+   "ml_recorded": 0.9999964364296258,
+   "ml_counterfactual": 0.9981662494929856
+  },
+  {
+   "seq": 25302,
+   "attack_group": "cmd_injection",
+   "ml_recorded": 0.9999991552126029,
+   "ml_counterfactual": 0.9992653123063143
+  },
+  {
+   "seq": 25367,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999986173606,
+   "ml_counterfactual": 0.9998878650081476
+  },
+  {
+   "seq": 25370,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.999996444544568,
+   "ml_counterfactual": 0.9986148567636474
+  },
+  {
+   "seq": 25378,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999963701758151,
+   "ml_counterfactual": 0.9850619449583206
+  },
+  {
+   "seq": 25386,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999988890638493,
+   "ml_counterfactual": 0.9879245994597587
+  },
+  {
+   "seq": 25388,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999999533172914,
+   "ml_counterfactual": 0.9995082578836728
+  },
+  {
+   "seq": 25421,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996085,
+   "ml_counterfactual": 0.9999998372284522
+  },
+  {
+   "seq": 25443,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959646092597,
+   "ml_counterfactual": 0.9920182316230852
+  },
+  {
+   "seq": 25491,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999989048636015,
+   "ml_counterfactual": 0.9989901016323719
+  },
+  {
+   "seq": 25523,
+   "attack_group": "credential_stuffing",
+   "ml_recorded": 0.9999993168847381,
+   "ml_counterfactual": 0.9995049591031288
+  },
+  {
+   "seq": 25563,
+   "attack_group": "auth_bruteforce",
+   "ml_recorded": 0.999998897195467,
+   "ml_counterfactual": 0.9985572120244013
+  },
+  {
+   "seq": 25564,
+   "attack_group": "business_logic",
+   "ml_recorded": 0.9999988994272658,
+   "ml_counterfactual": 0.9985776497818211
+  },
+  {
+   "seq": 25648,
+   "attack_group": "dos",
+   "ml_recorded": 0.9999960104463865,
+   "ml_counterfactual": 0.9985894427481855
+  },
+  {
+   "seq": 25688,
+   "attack_group": "misconfiguration",
+   "ml_recorded": 0.9999982574265437,
+   "ml_counterfactual": 0.9836632246687693
+  },
+  {
+   "seq": 25721,
+   "attack_group": "ssrf",
+   "ml_recorded": 0.9999989011492171,
+   "ml_counterfactual": 0.998780875531761
+  },
+  {
+   "seq": 25785,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999959646092597,
+   "ml_counterfactual": 0.9921990677792725
+  },
+  {
+   "seq": 25787,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999885087,
+   "ml_counterfactual": 0.9999993207669066
+  },
+  {
+   "seq": 25829,
+   "attack_group": "ldap_injection",
+   "ml_recorded": 0.9999999999997712,
+   "ml_counterfactual": 0.9999999107464653
+  },
+  {
+   "seq": 25830,
+   "attack_group": "api_key_exposure",
+   "ml_recorded": 0.9999988003089011,
+   "ml_counterfactual": 0.9990196547634752
+  },
+  {
+   "seq": 25862,
+   "attack_group": "sql_injection",
+   "ml_recorded": 0.9999969137916812,
+   "ml_counterfactual": 0.9986852000374858
+  },
+  {
+   "seq": 25963,
+   "attack_group": "nosql_injection",
+   "ml_recorded": 0.9999999999996088,
+   "ml_counterfactual": 0.9999998489681582
+  }
+ ]
+}

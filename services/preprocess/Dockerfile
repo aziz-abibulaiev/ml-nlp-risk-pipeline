@@ -1,8 +1,8 @@
-FROM python:3.13-slim
+FROM python:3.13.12-slim
 WORKDIR /app
 
-COPY services/preprocess/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY services/preprocess/requirements.txt services/preprocess/constraints.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 COPY common /app/common
 COPY services/preprocess/main.py .

@@ -1,4 +1,5 @@
 import os
+from common.featurize import parse_access_log_line as _shared_parse_access_log_line
 import logging
 import time
 import asyncio
@@ -93,23 +94,9 @@ def _apache_to_iso(s: str) -> str:
 
 def parse_access_log_line(line: str) -> Optional[Dict[str, Any]]:
     """
-    Parse a single Apache/Nginx-style access log line into an event dict
-    compatible with ApiEvent/`/process`.
+    Parse an Apache/Nginx combined-log line into an event (common/featurize.py).
     """
-    m = ACCESS_RE.match(line)
-    if not m:
-        return None
-    ts_iso = _apache_to_iso(m.group("ts"))
-    return {
-        "ts": ts_iso,
-        "endpoint": m.group("endpoint"),
-        "method": m.group("method"),
-        "headers": {},
-        "payload": {},
-        "latency_ms": 0,
-        "source_ip": m.group("ip"),
-        "user_id": "",
-    }
+    return _shared_parse_access_log_line(line)
 
 # Extended log replay helpers for CloudTrail/CloudWatch/JSONL
 def parse_cloudtrail_record(rec: dict) -> Optional[Dict[str, Any]]:
@@ -213,17 +200,16 @@ def parse_log_line(kind: Optional[str], line: str) -> list[Dict[str, Any]]:
 
         if kind_l in ("event_jsonl", "jsonl"):
             if isinstance(obj, dict):
-                # provide a few safe defaults if missing
-                ev = {
-                    "ts": obj.get("ts") or obj.get("timestamp"),
-                    "endpoint": obj.get("endpoint", "/"),
-                    "method": obj.get("method", "GET"),
-                    "headers": obj.get("headers", {}),
-                    "payload": obj.get("payload", {}),
-                    "latency_ms": obj.get("latency_ms", 0),
-                    "source_ip": obj.get("source_ip", ""),
-                    "user_id": obj.get("user_id", ""),
-                }
+                # pass the ApiEvent-compatible dict through unchanged; fill safe defaults if missing
+                ev = dict(obj)
+                ev.setdefault("ts", obj.get("timestamp"))
+                ev.setdefault("endpoint", "/")
+                ev.setdefault("method", "GET")
+                ev.setdefault("headers", {})
+                ev.setdefault("payload", {})
+                ev.setdefault("latency_ms", 0)
+                ev.setdefault("source_ip", "")
+                ev.setdefault("user_id", "")
                 events.append(ev)
             return events
 
@@ -300,6 +286,9 @@ class ReplayRequest(BaseModel):
     path: str
     max_events: Optional[int] = None
     kind: Optional[str] = None
+    # True: each replayed event is processed with the full JSON response (/process?detailed=1).
+    # False: simplified plain-text response (/process without detailed output).
+    detailed: bool = True
 
 class EvalStats:
     def __init__(self):
@@ -620,8 +609,7 @@ async def replay_access_log(
         return {"status": "ok", "events_total": 0, "events_sent": 0}
 
     base_url = str(request.base_url).rstrip("/")
-    # Force detailed responses from /process
-    process_url = base_url + "/process?detailed=1"
+    process_url = base_url + ("/process?detailed=1" if req.detailed else "/process")
 
     # Reuse trace ID if provided
     trace = x_trace_id or request.headers.get("X-Trace-Id") or "-"
@@ -783,7 +771,7 @@ async def process(
             **(risk_ctx if isinstance(risk_ctx, dict) else {}),
             "topics": topics_li if isinstance(topics_li, list) else [],
             "trace_id": trace,
-            "hkey": priv_ctx.get("source_ip") or rid,
+            "hkey": rid,  # hysteresis state per hash_id
         }
 
         # Prepare payload for fusion with both per-model and aggregated scores

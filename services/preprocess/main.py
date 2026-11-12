@@ -33,6 +33,12 @@ from common.utils import (
   mask_pii_in_obj
 )
 from common.schemas import ApiEvent
+from common.featurize import (
+  numeric_features as _numeric_features,
+  payload_text as _payload_text,
+  headers_string as _headers_string,
+  parse_access_log_line as _parse_access_log_line,
+)
 
 SERVICE_NAME = "preprocess"
 
@@ -453,16 +459,9 @@ def detect_http_method(method_str: str, headers: dict | None = None, endpoint: s
 
     return "UNKNOWN", 0.0
   
-def parse_access_log(line:str) -> Optional[ApiEvent]:
-    m = ACCESS_RE.match(line)
-    if not m: return None
-    return ApiEvent(
-        ts=_apache_to_iso(m.group("ts")),
-        endpoint=m.group("endpoint"),
-        method=m.group("method"),
-        headers={"user-agent":"...", "referer":"..."},
-        payload={}, latency_ms=0, source_ip=m.group("ip"), user_id=""
-    )
+def parse_access_log(line: str) -> Optional[dict]:
+    # shared converter (common/featurize.py)
+    return _parse_access_log_line(line)
 
 def parse_cloudtrail(obj:dict) -> Optional[ApiEvent]:
     try:
@@ -551,7 +550,7 @@ async def featurize(
                 kind, ev = auto_parse(event)
                 if ev is not None:
                     log_kind = kind  # "access_log" | "cloudtrail"
-                    event = ev.model_dump()
+                    event = ev if isinstance(ev, dict) else ev.model_dump()
             except Exception:
                 pass
 
@@ -567,18 +566,13 @@ async def featurize(
 
             det_method, det_acc = detect_http_method(method, headers if isinstance(headers, dict) else None, endpoint)
             method_code = float(METHOD_CODE_MAP.get(det_method, 0))
-            req_rate_60s = _rate_bump_get(_rate_key(endpoint, det_method, source_ip, user_id), time.time())
-            
-            headers_str, header_count = _normalize_headers(headers)
+            headers_str, header_count = _headers_string(headers)
             headers_bytes = len(headers_str.encode("utf-8"))
             if headers_bytes > MAX_HEADERS_BYTES:
                 log.warning('headers_too_large trace_id="%s" size=%d', trace_id_local, headers_bytes)
                 raise HTTPException(status_code=413, detail="Headers too large")
 
-            if isinstance(payload, (dict, list)):
-                payload_text = ensure_compact_json(payload)
-            else:
-                payload_text = str(payload or "")
+            payload_text = _payload_text(payload)
             payload_bytes = len(payload_text.encode("utf-8"))
             if payload_bytes > MAX_PAYLOAD_BYTES:
                 log.warning('payload_too_large trace_id="%s" size=%d', trace_id_local, payload_bytes)
@@ -597,41 +591,11 @@ async def featurize(
                 payload=payload_text[:2048],
                 ts=ts_slim,
             ))         
-            qp_count   = float(query_param_count(endpoint))
-            p_depth    = float(path_depth(endpoint))
-            susp_ratio = float(suspicious_ratio(payload_text))
-            is_json    = 1.0 if is_json_like(payload) else 0.0
-            ip_priv    = 1.0 if is_private_ip(source_ip) else 0.0
-
-            method_onehot = {
-                "method_GET":  1.0 if method == "GET"  else 0.0,
-                "method_POST": 1.0 if method == "POST" else 0.0,
-                "method_PUT":  1.0 if method == "PUT"  else 0.0,
-                "method_DEL":  1.0 if method in ("DELETE", "DEL") else 0.0,
-                "method_Other":0.0,
-            }
-            if sum(method_onehot.values()) == 0.0:
-                method_onehot["method_Other"] = 1.0
-
+            # numeric features from the shared featurizer
+            numeric_feats = _numeric_features(event, det_method, det_acc, MAX_TEXT_BYTES)
             rate_key = _rate_key(endpoint or "-", method or "-", source_ip or "-", user_id or "-")
             req_rate_rps = _rate_bump_get(rate_key, time.time())
-            
-            numeric_feats = {
-                "endpoint_len": float(len(endpoint)),
-                "header_count": float(header_count),
-                "payload_size": float(payload_bytes),
-                "latency_ms":   float(latency) if isinstance(latency, (int, float)) else 0.0,
-                "headers_entropy": float(shannon_entropy(headers_str[:MAX_TEXT_BYTES])),
-                **method_onehot,
-                "query_param_count": qp_count,
-                "path_depth": p_depth,
-                "suspicious_char_ratio": susp_ratio,
-                "is_json_payload": is_json,
-                "ip_private": ip_priv,
-                "http_method_code": method_code,
-                "http_method_accuracy": float(det_acc),
-                "req_rate_60s": req_rate_rps,
-            }
+            numeric_feats["req_rate_60s"] = req_rate_rps
 
             text_fields = {
                 "endpoint":   endpoint,
@@ -651,9 +615,6 @@ async def featurize(
                 log.exception("rule_features_for_ml_failed")
 
             headers_dict = headers if isinstance(headers, dict) else None
-
-            rate_key = _rate_key(endpoint or "-", method or "-", source_ip or "-", user_id or "-")
-            req_rate_rps = _rate_bump_get(rate_key, time.time())
 
             env_tag      = os.getenv("PREPROC_ENV", "dev")
             endpoint_cls = _endpoint_class(endpoint or "")

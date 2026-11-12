@@ -1,0 +1,199 @@
+{
+  "feature_order": [
+    "endpoint_len",
+    "header_count",
+    "payload_size",
+    "headers_entropy",
+    "query_param_count",
+    "path_depth",
+    "suspicious_char_ratio",
+    "is_json_payload",
+    "http_method_code"
+  ],
+  "seed": 42,
+  "n_train": 499899,
+  "models": {
+    "if": {
+      "model": "if",
+      "format": "ml-bundle-1",
+      "trained_at": "2026-11-11T15:50:02Z",
+      "feature_order": [
+        "endpoint_len",
+        "header_count",
+        "payload_size",
+        "headers_entropy",
+        "query_param_count",
+        "path_depth",
+        "suspicious_char_ratio",
+        "is_json_payload",
+        "http_method_code"
+      ],
+      "n_fit": 499899,
+      "params": {
+        "n_estimators": 200,
+        "contamination": "auto"
+      },
+      "calibration": {
+        "mu": -0.11058812174117098,
+        "sigma": 0.09618359035845117,
+        "on": "ML-val benign",
+        "direction": "higher_is_anomalous"
+      },
+      "metrics": {
+        "ml_val": {
+          "roc_auc": 0.8888917682669285,
+          "pr_auc": 0.7052785505483388,
+          "n": 759923,
+          "pos": 260000
+        },
+        "ml_test": {
+          "roc_auc": 0.39388348666666667,
+          "pr_auc": 0.36610694803367105,
+          "n": 25000,
+          "pos": 10000
+        }
+      },
+      "sha256": "384ed581b09ea925608e772775df0c0ff6a28a2e4c66d2c5c22d1503718ee2a0",
+      "train_seconds": 3.2
+    },
+    "ocsvm": {
+      "model": "ocsvm",
+      "format": "ml-bundle-1",
+      "trained_at": "2026-11-11T15:50:46Z",
+      "feature_order": [
+        "endpoint_len",
+        "header_count",
+        "payload_size",
+        "headers_entropy",
+        "query_param_count",
+        "path_depth",
+        "suspicious_char_ratio",
+        "is_json_payload",
+        "http_method_code"
+      ],
+      "n_fit": 50000,
+      "params": {
+        "kernel": "rbf",
+        "nu": 0.05,
+        "gamma": "scale"
+      },
+      "calibration": {
+        "mu": -41.27911006174866,
+        "sigma": 30.049557286588914,
+        "on": "ML-val benign",
+        "direction": "higher_is_anomalous"
+      },
+      "metrics": {
+        "ml_val": {
+          "roc_auc": 0.9543678550804516,
+          "pr_auc": 0.9245182933633961,
+          "n": 759923,
+          "pos": 260000
+        },
+        "ml_test": {
+          "roc_auc": 0.65704144,
+          "pr_auc": 0.5186328710671374,
+          "n": 25000,
+          "pos": 10000
+        }
+      },
+      "sha256": "da204ad18d3c3bc7e576f98be65a0ef99640e2c5a60f342b5e7c8ae18626e0ce",
+      "train_seconds": 43.8
+    },
+    "ae": {
+      "model": "ae",
+      "format": "ml-bundle-1",
+      "trained_at": "2026-11-11T15:51:17Z",
+      "feature_order": [
+        "endpoint_len",
+        "header_count",
+        "payload_size",
+        "headers_entropy",
+        "query_param_count",
+        "path_depth",
+        "suspicious_char_ratio",
+        "is_json_payload",
+        "http_method_code"
+      ],
+      "n_fit": 200000,
+      "params": {
+        "layers": [
+          64,
+          32,
+          16,
+          32,
+          64
+        ],
+        "epochs": 20,
+        "batch": 64
+      },
+      "calibration": {
+        "mu": 0.00045043285395684687,
+        "sigma": 0.031198057443768683,
+        "on": "ML-val benign",
+        "direction": "higher_is_anomalous"
+      },
+      "metrics": {
+        "ml_val": {
+          "roc_auc": 0.9471431474793273,
+          "pr_auc": 0.8821062046903506,
+          "n": 759923,
+          "pos": 260000
+        },
+        "ml_test": {
+          "roc_auc": 0.5325736666666667,
+          "pr_auc": 0.38883541064570115,
+          "n": 25000,
+          "pos": 10000
+        }
+      },
+      "sha256": "453d1cb88f223b41aa299c99dcbec341d68370b54f20e5393b95989ba7e879f8",
+      "train_seconds": 31.8
+    },
+    "lstm_ae": {
+      "model": "lstm_ae",
+      "format": "ml-bundle-1",
+      "trained_at": "2026-11-11T15:53:17Z",
+      "feature_order": [
+        "endpoint_len",
+        "header_count",
+        "payload_size",
+        "headers_entropy",
+        "query_param_count",
+        "path_depth",
+        "suspicious_char_ratio",
+        "is_json_payload",
+        "http_method_code"
+      ],
+      "n_fit": 200000,
+      "params": {
+        "latent": 16,
+        "epochs": 15,
+        "batch": 64,
+        "timesteps": 9
+      },
+      "calibration": {
+        "mu": 0.0026539982909126658,
+        "sigma": 0.2663519631413705,
+        "on": "ML-val benign",
+        "direction": "higher_is_anomalous"
+      },
+      "metrics": {
+        "ml_val": {
+          "roc_auc": 0.9847175663129045,
+          "pr_auc": 0.9704813226371166,
+          "n": 759923,
+          "pos": 260000
+        },
+        "ml_test": {
+          "roc_auc": 0.6628936000000001,
+          "pr_auc": 0.4961429641933391,
+          "n": 25000,
+          "pos": 10000
+        }
+      },
+      "sha256": "7a169fc8aa78e2b977a41db21afa43b5e550103598e3b88d62dadcb5ff6ffb26",
+      "train_seconds": 119.7
+    }
+  }
+}

@@ -84,7 +84,7 @@
     "impact": [0.30, 0.60]
   },
   "matrix": [
-    ["low",    "medium",  "high"],
+    ["low",    "low",     "low"],
     ["medium", "high",    "high"],
     ["high",   "high",    "critical"],
     ["high",   "critical","critical"]

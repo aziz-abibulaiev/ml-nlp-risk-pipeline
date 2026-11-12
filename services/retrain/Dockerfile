@@ -1,11 +1,11 @@
-FROM python:3.13-slim as BASE
+FROM python:3.13.12-slim as BASE
 
 WORKDIR /app
 
 ENV PYTHONPATH=/app
 
-COPY services/retrain/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY services/retrain/requirements.txt services/retrain/constraints.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 COPY common /app/common
 

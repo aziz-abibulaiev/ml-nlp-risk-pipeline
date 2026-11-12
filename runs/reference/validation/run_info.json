@@ -1,0 +1,30 @@
+{
+  "set": "validation",
+  "run_id": "reference/validation",
+  "started_utc": "2026-11-11T15:55:42Z",
+  "git_head": "d9240fa742d0ac1dbc446b6810e189709e74916f",
+  "worktree_diff_sha256": "caef09a08afd02b1ad6d4810d956b950aa882110910619b11271c1d75abd1b7c",
+  "n_events": 20000,
+  "counts": {
+    "benign:wsal_labeled": 10000,
+    "attack:attacklab": 9615,
+    "attack:csic2010": 385
+  },
+  "concurrency": 8,
+  "env": {
+    "ML_THRESHOLD": "0.7",
+    "NLP_THRESHOLD": "0.60",
+    "FUSION_LEVELS": "0.3,0.5,0.6,0.8",
+    "FUSION_NORMAL_THR": "0.0",
+    "HYST_ENABLED": null,
+    "MODELS_DIR": null,
+    "ML_AGGREGATE": null,
+    "FUSION_MODE": null,
+    "FUSION_ALPHA": "0.6",
+    "FUSION_BETA": "0.4",
+    "IMPACT_POLICY_HOST": null,
+    "COMPOSE_PROJECT_NAME": null
+  },
+  "finished_utc": "2026-11-11T16:06:42Z",
+  "wall_seconds": 660.2
+}

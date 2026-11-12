@@ -1,4 +1,5 @@
 import os
+from common.ml_scoring import is_bundle, score_one as bundle_score_one
 import json
 import logging
 import joblib
@@ -535,6 +536,13 @@ def _score_one(kind: str, vec: List[float], nf: Dict[str, float]) -> Optional[fl
         if m is None:
             return None
 
+        # 0) calibrated bundles (common/ml_scoring.py)
+        if is_bundle(m):
+            order = [x.strip() for x in FEATURE_ORDER.split(",") if x.strip()]
+            if order != list(m["feature_order"]):
+                raise ValueError(f"feature order mismatch for {kind}")
+            return bundle_score_one(m, vec)
+
         # 1) sklearn-like anomaly models (IF, OCSVM, custom wrappers)
         if hasattr(m, "decision_function"):
             raw = float(m.decision_function([vec])[0])
@@ -585,10 +593,18 @@ def _score_one(kind: str, vec: List[float], nf: Dict[str, float]) -> Optional[fl
         log.exception("model_infer_failed kind=%s", kind)
         return None
 
+ML_AGGREGATE = os.getenv("ML_AGGREGATE", "max").lower()  # max | mean | median
+
 def _aggregate_scores(per: List[Dict[str, float]]) -> float:
-    if not per:
+    vals = [float(p["score"]) for p in per if "score" in p]
+    if not vals:
         return 0.0
-    return max(p["score"] for p in per if "score" in p)
+    if ML_AGGREGATE == "mean":
+        return sum(vals) / len(vals)
+    if ML_AGGREGATE == "median":
+        v = sorted(vals); n = len(v)
+        return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2.0
+    return max(vals)
 
 def _score_rules_clf(nf: Dict[str, float]) -> Optional[float]:
     """Return the probability of class 1 from the rules-supervised GBDT classifier, or None."""

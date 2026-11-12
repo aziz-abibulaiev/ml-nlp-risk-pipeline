@@ -1,474 +1,110 @@
-# ML/NLP Anomaly Detection Pipeline
+# ML/NLP risk pipeline for HTTP traffic
 
-This repository contains a microservice-based risk/anomaly detection pipeline for HTTP traffic.  
-It combines:
+Code and evaluation for "Context-Aware ML/NLP Pipeline for Real-Time Anomaly Detection and
+Risk Assessment in Cloud API Traffic" (Mach. Learn. Knowl. Extr. 2026, 8, 25).
 
-- **ML on numeric features** (Isolation Forest, One-Class SVM, Autoencoders)
-- **NLP on raw payloads / logs** (TF-IDF + Logistic Regression, character-level SGD, rules)
-- **Context-aware risk scoring** (OWASP Top-10, impact policy)
-- **Alerting & fan-out** (OpenSearch, Slack, email, ServiceNow, Redis DLQ)
+The pipeline runs as Docker Compose services: preprocess, ml-inference, nlp-inference, fusion,
+alerting and orchestrator, with Redis and OpenSearch.
 
-The system is designed to run in **Kubernetes/EKS**, but ships with a **Docker Compose** setup for local experimentation.
+## Requirements
 
-## Training Datasets
+- Docker with Compose v2 (12 GB of memory for the Docker VM is enough)
+- Python 3.12 or newer
+- A `.env` file:
 
-This project does **not** ship any third-party datasets in the repo.  
-Instead, the retraining job expects CSV files that you can build from public datasets.
+  ```bash
+  cp .env.example .env    # then set ORCH_TOKEN and OPENSEARCH_ADMIN_PASSWORD
+  ```
 
-### NLP (Text) Datasets
+- The Kaggle datasets in `~/.cache/kagglehub/datasets/`:
 
-The NLP models (`nlp_tfidf_lr*.joblib`, `nlp_char_sgd*.joblib`) are trained on HTTP parameter payloads derived from:
+  | Kaggle dataset | File |
+  |---|---|
+  | `mahendradata/web-server-access-logs-labeled` | `labeled.csv` |
+  | `moradrawashdeh/attack-simulation-lab` | `attack-simulation-alert.csv` |
+  | `ispangler/csic-2010-web-application-attacks` | `csic_database.csv` |
+  | `evg3n1j/httpparamsdataset` | `payload_full.csv` |
+  | `cyberprince/web-application-payloads-dataset` | `WEB_APPLICATION_PAYLOADS.jsonl` |
 
-#### 1. HttpParamsDataset
+  ```bash
+  pip install kagglehub
+  python -c "import kagglehub; [kagglehub.dataset_download(d + '/versions/1') for d in [
+    'mahendradata/web-server-access-logs-labeled', 'moradrawashdeh/attack-simulation-lab',
+    'ispangler/csic-2010-web-application-attacks', 'evg3n1j/httpparamsdataset',
+    'cyberprince/web-application-payloads-dataset']]"
+  ```
 
-Kaggle: <https://www.kaggle.com/datasets/evg3n1j/httpparamsdataset?select=payload_full.csv>
+## Reproduce the results
 
-- Each record is a **value of an HTTP request parameter**.
-- Total payloads: ~31k
-  - **Benign** values (`norm`): 19,304
-  - **Anomalous** values (`anom`): 11,763
-- Anomalies are split into attack types:
-  - SQL Injection (`sqli`) — 10,852
-  - Cross-Site Scripting (`xss`) — 532
-  - Command Injection (`cmdi`) — 89
-  - Path Traversal (`path-traversal`) — 290
-
-The dataset itself was built from several sources:
-
-- **CSIC2010** benign HTTP payloads
-- **sqlmap** – SQL injection samples
-- **xssya** – XSS payloads
-- **Vega Scanner** – Command Injection & Path Traversal samples
-- **FuzzDB** – extra XSS / Command Injection / Path Traversal payloads
-
-#### 2. Web Application Payloads Dataset
-Kaggle: https://www.kaggle.com/datasets/cyberprince/web-application-payloads-dataset￼
-
-Curated web attack payloads for red-teaming and NLP:
-- SQL Injection (SQLi)
-- Cross-Site Scripting (XSS)
-- Server-Side Request Forgery (SSRF)
-- Command Injection (CMDi)
-- CSRF-related payloads
-
-### Numeric ML (Tabular) Datasets
-
-The numeric ML models (if_model.joblib, ocsvm_model.joblib, ae_model.joblib, lstm_ae_model.joblib, ml_rules_clf.joblib) are trained on features built from HTTP and network traffic.
-
-We currently use two main public sources:
-
-1. CSIC 2010 Web Application Attacks
-Kaggle: https://www.kaggle.com/datasets/ispangler/csic-2010-web-application-attacks?select=csic_database.csv￼
--	HTTP traffic with normal vs attack requests against a web application.
--	Includes:
--	Normal web traffic
--	SQL Injection
--	XSS
--	CSRF
--	Other web application attacks
-
-2. Attack Simulation Lab (PCAP → CSV)
-Kaggle:
-https://www.kaggle.com/datasets/moradrawashdeh/attack-simulation-lab?select=attack-simulation-alert.csv￼
-
-This dataset comes from a controlled lab environment:
--	Kali machine (10.20.30.103) – source of attack traffic (various tools).
--	OWASP Broken Web Application (10.20.30.101) – target of attacks.
--	Normal Windows PC (10.20.30.1) – source of benign traffic.
-
-Key points:
--	Raw traffic captured as PCAP, then converted to CSV using Tshark.
--	Each row = one network packet, with fields for:
--	Frame metadata (frame.*)
--	Ethernet, IP, IPv6
--	TCP/UDP/ICMP
--	HTTP, DNS, SMTP, POP, IMAP, FTP
--	An extra alert column marks each packet as:
--	"benign" – normal traffic (mostly from the Windows PC)
--	"suspicious" – attack traffic (mostly from Kali → OWASP BWA)
-
-These two sources are then merged into a unified numeric dataset (/data/ml_numeric.csv) that powers:
--	Isolation Forest (if_model.joblib)
--	One-Class SVM (ocsvm_model.joblib)
--	Dense Autoencoder (ae_model.joblib)
--	LSTM Autoencoder (lstm_ae_model.joblib)
--	Rules-supervised classifier (ml_rules_clf.joblib)
-
-## High-Level Architecture
-![image](overall_architecture.png)
-Conceptually, one HTTP/log event flows through these stages:
-1.	Preprocess service
--	Normalises the incoming JSON event (ts, endpoint, method, headers, payload, etc.).
--	Extracts numeric features (lengths, entropies, rates, etc.).
--	Builds text fields for NLP.
--	Derives risk context (env, endpoint_class, data_class, auth_state, exposure, blast).
-2.	ML inference service (ml_infer)
--	Takes numeric_feats and hash_id.
--	Runs multiple anomaly models (IF, OCSVM, Dense AE, LSTM AE) + a rules-supervised classifier.
--	Aggregates them into a single ml_score in [0, 1] with per-model calibration.
-3.	NLP inference service
--	Takes text fields (endpoint, headers, payload, etc.).
--	Runs:
--	Global models (e.g. tfidf_lr, char_sgd).
--	Per-attack models (e.g. tfidf_lr__sql_injection, char_sgd__business_logic).
--	Rule-based detections (regex / patterns).
--	Produces:
--	nlp_score in [0, 1]
--	A list of topics (e.g. SQL Injection, Business Logic Abuse) with confidences.
-4.	Fusion / Orchestrator
--	Combines ml_score + nlp_score using adaptive weights.
--	Applies an impact policy (policies/impact_policy.json) based on OWASP Top-10:
--	environment (dev / stage / prod)
--	endpoint class (payments, auth, admin, profile, files, webhook, public_api, report_export, …)
--	data class (generic, pii, pci, tokens, credentials, secrets, …)
--	auth state (anonymous, user, admin, service, third_party_app)
--	exposure (internal / public)
--	blast radius (low / med / high)
--	Computes:
--	final_score in [0, 1]
--	risk_level ∈ {normal, low, medium, high, critical}
--	is_anomaly (boolean)
--	Exposes a single entrypoint: POST /process.
-5.	Alerting service (alerting)
--	Receives a FusionSnapshot from orchestrator.
--	Applies:
--	deduplication (Redis + in-memory fallback)
--	risk gating (ALERT_MIN_RISK).
--	Builds a human-readable summary and “recommended actions” using policies/recommended_actions.json.
--	Fans out alerts to configured sinks:
--	Local logs
--	OpenSearch (alerts-*, incidents-*)
--	Slack webhook
--	Email (SMTP)
--	ServiceNow
-6.	Retrain job (retrain)
--	Periodically (or on demand) rebuilds ML and NLP models from datasets.
--	Writes artefacts to:
--	/models/ml/… for ML
--	/models/nlp/… for NLP
--	Produces corresponding *.meta.json with calibration/metrics.
-
-## Models & Features
-
-### Numeric ML (Tabular)
-
-The ML inference service works over a fixed feature vector built in preprocess.
-
-Core features include (non-exhaustive):
--	endpoint_len
--	header_count
--	payload_size
--	headers_entropy
--	query_param_count
--	path_depth
--	suspicious_char_ratio
--	is_json_payload
--	http_method_code
-
-Models:
--	Isolation Forest (if)
--	One-Class SVM (ocsvm)
--	Dense Autoencoder (ae)
--	LSTM Autoencoder (lstm_ae)
--	Rules-supervised classifier (HistGradientBoostingClassifier over rule features)
-
-### NLP (Text)
-
-The NLP side uses:
--	TF-IDF + Logistic Regression (bag-of-words)
--	Character-level SGD classifier
--	Per-attack models:
--	__sql_injection, __xss, __nosql_injection,
-__ldap_injection, __cmd_injection, __ssrf,
-__ssrf_sensitive, __api_key_exposure, __auth_bruteforce,
-__credential_stuffing, __idor, __misconfiguration,
-__data_exposure, __dos, __websocket, __business_logic, …
--	A rules engine that tags suspicious payloads (SQLi/XSS/SSRF/etc.) based on regexes and patterns
-from policies/rules/base_rules.json.
-
-Training data is assembled into nlp_train.csv and then expanded into a silver-labeled dataset
-nlp_train_silver.csv with per-attack labels.
-
-## Risk Scoring & Impact Policy
-
-Final risk is not just anomaly scores – it’s also the context.
-
-The file policies/impact_policy.json controls:
--	Base weights for:
--	env (dev, stage, prod)
--	endpoint_class (payments, auth, admin, profile, files, webhook, public_api, report_export, …)
--	data_class (generic, pii, pci, tokens, credentials, secrets, …)
--	auth_state (anonymous, user, admin, service, third_party_app)
--	exposure (internal, public)
--	blast (low, med, high)
--	Topic caps and escalations per OWASP Top-10 category, e.g.:
--	SQLi, Command Injection, Cloud Metadata SSRF, API key exposure get higher caps.
--	Misconfiguration, WebSocket abuse, noisy DoS get more moderate caps.
--	Mapping from (impact, final_score) to a risk level matrix:
--	normal / low / medium / high / critical.
-
-ML + NLP + impact -> final_score, risk_level -> alerting.
-
-## Alerting & Recommended Actions
-
-The alerting service:
--	Authenticates requests from the orchestrator via X-Orch-Token (optional).
--	Deduplicates alerts by hash_id using Redis (and an in-memory fallback).
--	Gates alerts by minimum severity: ALERT_MIN_RISK (e.g. medium).
-
-It then builds a human-readable alert using build_human_alert() and merges in
-topic-specific recommended actions from policies/recommended_actions.json, e.g.:
-```
-{
-  "default": [
-    "Review recent requests from same IP/user",
-    "Apply temporary rate limiting or block",
-    "Validate inputs and review server logs around timestamp"
-  ],
-  "topics": {
-    "SQL Injection": [
-      "Check DB query logs for suspicious patterns",
-      "Review ORM/SQL construction around endpoint",
-      "Tighten WAF rules for SQLi patterns"
-    ],
-    "Business Logic Abuse": [
-      "Implement idempotency/atomic checks",
-      "Add server-side validations",
-      "Rate-limit sensitive actions"
-    ]
-  }
-}
+```bash
+make venv    # Python environment in .venv, once
+make all     # about 2 hours on an Apple M3 Pro
 ```
 
-Supported sinks (via ALERT_SINKS env, comma-separated):
--	local (logs)
--	os_alerts (OpenSearch alerts-*)
--	opensearch (incidents index with richer document)
--	slack
--	email
--	servicenow
+`make all` builds the data splits, trains the ML and NLP models, scores a validation stream,
+selects the thresholds and fusion weights on it, sends the mixed stream of 26,025 events once
+with hysteresis and once without, computes the tables and figures and measures latency.
+Existing runs are never overwritten. The steps can also be run one by one with `make data`,
+`make images`, `make train`, `make validation`, `make freeze`, `make mixed`, `make tables` and
+`make bench`.
 
-## Datasets & Retraining
+The results are written to:
 
-The retrain job (jobs/retrain/main.py) can:
--	Download and merge network / log datasets (e.g. CSIC 2010, Attack Simulation Lab) into
-/data/ml_numeric.csv with our numeric feature schema.
--	Build a rules-supervised dataset ml_rules_silver.csv from the NLP “silver” labels.
--	Build nlp_train.csv (HttpParamsDataset + synthetic benign traffic).
--	Train and save:
--	if_model.joblib
--	ocsvm_model.joblib
--	ae_model.joblib
--	lstm_ae_model.joblib
--	ml_rules_clf.joblib
--	nlp_tfidf_lr*.joblib
--	nlp_char_sgd*.joblib
+| File | Content |
+|---|---|
+| `runs/mixed/tables/table4.csv` | precision, recall, F1 and FPR at Medium+ and Low+, with 95% confidence intervals |
+| `runs/mixed/tables/table4_distinct.csv` | the same with every distinct request counted once |
+| `runs/mixed/tables/table5.csv`, `table5_by_group.csv` | risk levels by class and by attack type |
+| `runs/mixed/tables/fig*.png` | figures |
+| `runs/mixed/ablations.json` | other fusion weights, including the NLP branch alone |
+| `runs/mixed/header_features.json` | attacks scored with the header features of benign events |
+| `runs/mixed/run_info.json`, `runs/bench-replay/results.json` | latency and throughput |
+| `models/ml/ml_test_eval.json`, `models/nlp/train_report.json` | held-out ML and NLP test metrics |
+| `runs/validation/frozen_config.json` | the selected thresholds and fusion weights |
+| `runs/mixed-no-hysteresis/` | the same tables without hysteresis |
 
-Each model is saved under:
--	/models/ml/…
--	/models/nlp/…
+To compare a new run with the reference outputs of the article:
 
-with meta files like *.meta.json containing:
--	feature_order
--	calibration (mu, sigma)
--	metrics (roc_auc_label, pr_auc_label, best_f1_label, …)
--	optional recommended_threshold.
-
-The ML inference service reads these meta files at startup and automatically:
--	loads calibration for each anomaly model
--	infers recommended thresholds if not overridden by ML_THRESHOLD.
-
-## Running Locally
-
-Requirements
--	Docker & Docker Compose
--	Python 3.11+ (for the OWASP test tool and any local scripts)
-
-Quick Start
-	1.	Clone the repo
-
-git clone git@github.com:aziz-abibulaiev/nlp-ml-logs-analyzer.git
-cd ml-nlp-eks-proto
-
-
-	2.	(Optional) Prepare .env
-You can override things like:
-
-```sh
-# Core
-ORCH_TOKEN=changeme
-LOG_LEVEL=INFO
-
-# Alerting
-ALERT_SINKS=local,os_alerts
-ALERT_MIN_RISK=medium
-
-# Slack / email / SNOW (optional)
-SLACK_WEBHOOK_URL=...
-EMAIL_SMTP_HOST=...
-EMAIL_TO=...
-SERVICENOW_URL=...
-SERVICENOW_USER=...
-SERVICENOW_PASS=...
+```bash
+make compare
 ```
 
-	3.	Build & run services
+## Results without re-running the pipeline
 
-```sh
-docker compose build
+The reference outputs are in `runs/reference/`. The per-event outputs and the trained models
+are attached to release v0.0.2 because of their size. Download the assets into `dist/`, then:
+
+```bash
+cd dist && shasum -a 256 -c SHA256SUMS.txt && cd ..
+for r in validation mixed mixed-no-hysteresis; do gunzip -c dist/${r}_events.jsonl.gz > runs/reference/$r/events.jsonl; done
+tar -xzf dist/models.tar.gz
+shasum -a 256 -c runs/reference/validation/frozen_hashes.txt
+make reference-tables
+```
+
+## Run the pipeline
+
+```bash
 docker compose up -d
 ```
 
-Common services include (names may differ slightly):
--	preprocess
--	ml_infer
--	nlp_infer
--	orchestrator (exposes /process)
--	alerting
--	retrain (one-shot for training)
--	redis
--	opensearch
+The defaults of `docker-compose.yaml` are the frozen configuration
+(`runs/reference/validation/frozen.env`). Send one event:
 
-	4.	Train models (if retrain is not auto-run)
-If your docker-compose.yaml doesn’t already run retrain, you can:
-
-```sh
-docker compose run --rm retrain
-```
-
-This will:
--	use the configured datasets (or local CSVs),
--	build ml_numeric.csv, nlp_train.csv,
--	save models under /models/ml/ and /models/nlp/.
-
-
-## Example Usage
-
-Simple request to /process
-
-Assuming the orchestrator is mapped to localhost:8000:
-```sh
-curl -sS -f "http://localhost:8000/process" \
-  -H 'Content-Type: application/json' \
-  --data-binary @- << 'EOF'
-{
-  "event": {
-    "ts": "2025-11-26T15:33:19Z",
-    "endpoint": "/payments/refund",
-    "method": "POST",
-    "headers": {
-      "ct": "text"
-    },
-    "payload": "apply coupon SAVE10 twice to get double discount",
-    "latency_ms": 123,
-    "trace_nonce": "1764171199960740000",
-    "source_ip": "198.51.100.42",
-    "user_id": ""
-  }
-}
-EOF
-```
-
-The pipeline processes the event, and if it’s anomalous with sufficient risk,
-the alerting service will emit a human-readable summary and send it to configured sinks.
-
-## Testing tools
-
-###  OWASP Top-10 Smoke Test
-
-The tools/owasp_top_10_test.py script generates traffic covering ~OWASP Top-10 topics
-(SQLi, XSS, SSRF, Business Logic Abuse, etc.) against /process.
-```python
-python tools/owasp_top_10_test.py \
-  --url http://localhost:8000 \
-  --path-process /process \
-  --detailed \
-  --csv-out owasp_runs.csv \
-  --xlsx-out owasp_runs.xlsx
-```
-
--	--detailed asks orchestrator to return the full internal JSON
-(preprocess + ML + NLP + fusion + alert preview).
--	--csv-out / --xlsx-out export a table with useful columns, e.g.:
--	timestamp
--	endpoint / method / payload
--	source_ip / user_id
--	attack_type_identified
--	risk_level
--	final_score / thresholds
--	ml_score / nlp_score
--	topic / topic_score
--	env / endpoint_class / data_class / auth_state / exposure / blast
--	response_raw (for debugging)
-
-### Log file format testing
-
-The `tests/gen_log_file_attacks.py` script generates synthetic logs with OWASP-style attacks in several formats. It is useful for testing how the pipeline behaves on access logs and cloud-native log formats.
-
-Supported formats (`--kind`):
-- `access` – Apache/Nginx-style access log lines (default).  
-- `cloudwatch` – JSONL records similar to AWS CloudWatch Logs. (TODO) 
-- `cloudtrail` – JSONL records wrapped as CloudTrail `Records`. (TODO)
-
-Basic usage:
 ```bash
-# Create 100 Apache-style access.log entries with mixed attack types
-python tests/gen_log_file_attacks.py \
-  --kind access \
-  --count 100 \
-  --out tests/access_attacks.log
-
-# Post generated access.log to pipeline
-curl -X POST "http://localhost:8000/replay_access_log?concurrency=20" \
-  -H "Content-Type: application/json" \
-  -d '{"path": "tests/access_attacks.log"}'
+set -a; . ./.env; set +a
+curl -s http://localhost:8000/process -H "X-Orch-Token: $ORCH_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"event": {"endpoint": "/api/items?id=1%27%20OR%201=1--", "method": "GET", "headers": {"User-Agent": "curl"}, "payload": "id=1%27%20OR%201=1--"}}'
 ```
 
-If `--out` is omitted, the script uses default paths:
-- `tests/access_attacks.log` for `--kind access`
-- `tests/cloudwatch_attacks.jsonl` for `--kind cloudwatch`
-- `tests/cloudtrail_attacks.jsonl` for `--kind cloudtrail`
+`make down` stops the services.
 
-These files can be used with any tooling or endpoints that accept Apache-style access logs or JSONL events to verify that OWASP-style attacks are correctly detected, scored, and turned into alerts/incidents by the pipeline.
+## Notes
 
-## Observability & Operations
-
-Each service exposes Prometheus metrics at `/metrics`
-(e.g. `alert_requests_total`, `ml_score_latency_seconds`, etc.) and basic health endpoints:
-- `/health` – basic “I’m alive” probe.
-- `/ready` – deeper checks (models loaded, OpenSearch reachable, Redis ok, etc.).
-
-The alerting service also supports:
-- `POST /reload_actions` – reloads `policies/recommended_actions.json` without a restart.
-- `POST /replay_dlq` – retries alerts that previously failed to be stored in OpenSearch (DLQ replay).
-
-### OpenSearch & Dashboards
-
-By default, our docker compose env also starts:
-- **OpenSearch** on `http://localhost:9200`
-- **OpenSearch Dashboards** on `http://localhost:5601`
-
-The alerting service writes documents into daily indices:
-- `alerting-YYYY-MM-DD` – individual alerts
-- `incidents-YYYY-MM-DD` – aggregated incidents
-
-To explore them in Dashboards:
-
-1. Open **OpenSearch Dashboards** -> *Stack Management* -> *Index Patterns*.
-2. Create index patterns, for example:
-   - `alerting-*` (for `alerting-YYYY-MM-DD`)
-   - `incidents-*` (for `incidents-YYYY-MM-DD`)
-3. Set `context.ts` (or `@timestamp` if you map it) as the time field for time-based visualizations.
-
-There is a starter dashboard/visualization export in:
-- `opensearch-data/alerts-dashboard-provision-template.ndjson`
-
-You can import it via:
-1. **Dashboards** -> *Stack Management* -> *Saved Objects* -> *Import*.
-2. Select `alerts-dashboard-provision-template.ndjson`.
-3. When prompted, map the index reference used in the NDJSON to your `alerting-*` index pattern.
-
-This will create:
-- a “Total Attacks Over Time” histogram,
-- an “Attacks by Topic” pie chart,
-- and two tables (“Top 10 Attacks by Impact” and “Detailed Attack View”) bound to the `alerting-*` indices, so you can immediately see how the pipeline classifies and scores attacks in near real time.
+- All random choices use fixed seeds, 42 for the training subsamples and the NLP split and
+  20261110 for the mixed stream and the attack generator.
+- Hysteresis state is keyed by a hash that includes the send time to the second. A new run with
+  hysteresis can therefore differ from the reference in a few benign events between Normal and Low.
+- Neural network training can differ in the last digits on other CPU types. Latency depends on
+  the hardware.

@@ -1,0 +1,248 @@
+{
+  "general": {
+    "tfidf_lr": {
+      "model": "TFIDF+LogReg (pipeline)",
+      "trained_at": "2026-11-11T15:53:20Z",
+      "label_col": "label",
+      "recommended_threshold": 0.3439290044189051,
+      "threshold_selected_on": "nlp_val (max F1)",
+      "metrics": {
+        "val": {
+          "n": 4728,
+          "pos": 1832,
+          "threshold": 0.3439290044189051,
+          "precision": 0.9967248908296943,
+          "recall": 0.9967248908296943,
+          "f1": 0.9967248908296943,
+          "roc_auc": 0.9992272129605058,
+          "pr_auc": 0.9985794069626973
+        },
+        "test": {
+          "n": 4728,
+          "pos": 1833,
+          "threshold": 0.3439290044189051,
+          "precision": 0.9972572682391662,
+          "recall": 0.9918166939443536,
+          "f1": 0.9945295404814004,
+          "roc_auc": 0.9989572291523565,
+          "pr_auc": 0.9979998929351461
+        }
+      },
+      "sha256": "c995e80b40372fee6ec28be32f56366e73633ced1ce9ac93904eea3dd3f9bfb9"
+    },
+    "char_sgd": {
+      "model": "CharTFIDF+SGD(log_loss)",
+      "trained_at": "2026-11-11T15:53:23Z",
+      "label_col": "label",
+      "recommended_threshold": 0.24252005711841054,
+      "threshold_selected_on": "nlp_val (max F1)",
+      "metrics": {
+        "val": {
+          "n": 4728,
+          "pos": 1832,
+          "threshold": 0.24252005711841054,
+          "precision": 1.0,
+          "recall": 0.9994541484716157,
+          "f1": 0.9997269997269997,
+          "roc_auc": 0.9999990575767811,
+          "pr_auc": 0.9999985142854426
+        },
+        "test": {
+          "n": 4728,
+          "pos": 1833,
+          "threshold": 0.24252005711841054,
+          "precision": 1.0,
+          "recall": 0.9961811238406983,
+          "f1": 0.9980869089915277,
+          "roc_auc": 0.9996623031790048,
+          "pr_auc": 0.9996294812681578
+        }
+      },
+      "sha256": "b9cbcac1c6aa42a8fae6abd676905282a9feca37cf8fbb99736f96dac06ba91b"
+    }
+  },
+  "per_attack": {
+    "sql_injection": {
+      "tfidf_lr": {
+        "n": 4728,
+        "pos": 1260,
+        "threshold": 0.7658507981499235,
+        "precision": 0.9888446215139443,
+        "recall": 0.984920634920635,
+        "f1": 0.9868787276341948,
+        "roc_auc": 0.9996551234873035,
+        "pr_auc": 0.9990936226168773
+      },
+      "char_sgd": {
+        "n": 4728,
+        "pos": 1260,
+        "threshold": 0.44139202461585636,
+        "precision": 0.9976209357652657,
+        "recall": 0.9984126984126984,
+        "f1": 0.9980166600555335,
+        "roc_auc": 0.9999700206880138,
+        "pr_auc": 0.9999233826089121
+      }
+    },
+    "nosql_injection": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    },
+    "ldap_injection": {
+      "tfidf_lr": {
+        "n": 4728,
+        "pos": 2,
+        "threshold": 0.9993082610187859,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0
+      },
+      "char_sgd": {
+        "n": 4728,
+        "pos": 2,
+        "threshold": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0,
+        "pr_auc": 1.0
+      }
+    },
+    "cmd_injection": {
+      "tfidf_lr": {
+        "n": 4728,
+        "pos": 308,
+        "threshold": 0.9570775818949168,
+        "precision": 0.9548872180451128,
+        "recall": 0.8246753246753247,
+        "f1": 0.8850174216027874,
+        "roc_auc": 0.9917193101016629,
+        "pr_auc": 0.9460295522012312
+      },
+      "char_sgd": {
+        "n": 4728,
+        "pos": 308,
+        "threshold": 0.7110528387091831,
+        "precision": 0.9966666666666667,
+        "recall": 0.9707792207792207,
+        "f1": 0.9835526315789473,
+        "roc_auc": 0.9993374272786038,
+        "pr_auc": 0.9951876458431856
+      }
+    },
+    "xss": {
+      "tfidf_lr": {
+        "n": 4728,
+        "pos": 74,
+        "threshold": 0.8609261474509045,
+        "precision": 0.961038961038961,
+        "recall": 1.0,
+        "f1": 0.9801324503311258,
+        "roc_auc": 0.9997764201674817,
+        "pr_auc": 0.9810711244074639
+      },
+      "char_sgd": {
+        "n": 4728,
+        "pos": 74,
+        "threshold": 0.9357023177412548,
+        "precision": 0.9866666666666667,
+        "recall": 1.0,
+        "f1": 0.9932885906040269,
+        "roc_auc": 0.9999680600239259,
+        "pr_auc": 0.9978720982858474
+      }
+    },
+    "ssrf": {
+      "tfidf_lr": {
+        "n": 4728,
+        "pos": 3,
+        "threshold": 0.9998349807320362,
+        "precision": 0.5,
+        "recall": 0.6666666666666666,
+        "f1": 0.5714285714285714,
+        "roc_auc": 0.9989417989417989,
+        "pr_auc": 0.4
+      },
+      "char_sgd": {
+        "n": 4728,
+        "pos": 3,
+        "threshold": 0.998390406139146,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "f1": 0.8,
+        "roc_auc": 0.9990828924162258,
+        "pr_auc": 0.7291666666666666
+      }
+    },
+    "api_key_exposure": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    },
+    "auth_bruteforce": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    },
+    "credential_stuffing": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    },
+    "idor": {
+      "skipped": true,
+      "pos_train": 1,
+      "pos_val": 0
+    },
+    "misconfiguration": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    },
+    "data_exposure": {
+      "skipped": true,
+      "pos_train": 3,
+      "pos_val": 0
+    },
+    "dos": {
+      "tfidf_lr": {
+        "n": 4728,
+        "pos": 10,
+        "threshold": 0.1961205291733716,
+        "precision": 0.05714285714285714,
+        "recall": 0.2,
+        "f1": 0.08888888888888889,
+        "roc_auc": 0.7633531157270029,
+        "pr_auc": 0.012762489291628716
+      },
+      "char_sgd": {
+        "n": 4728,
+        "pos": 10,
+        "threshold": 0.2296162523115062,
+        "precision": 0.875,
+        "recall": 0.7,
+        "f1": 0.7777777777777778,
+        "roc_auc": 0.9036880033912675,
+        "pr_auc": 0.7520083818430512
+      }
+    },
+    "websocket": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    },
+    "ssrf_sensitive": {
+      "skipped": true,
+      "pos_train": 1,
+      "pos_val": 0
+    },
+    "business_logic": {
+      "skipped": true,
+      "pos_train": 0,
+      "pos_val": 0
+    }
+  }
+}

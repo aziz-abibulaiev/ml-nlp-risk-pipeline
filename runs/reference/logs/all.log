@@ -1,0 +1,1000 @@
+start 2026-11-11T15:48:45Z
+.venv/bin/python scripts/evaluation/prepare_splits.py
+<repo>/scripts/evaluation/prepare_splits.py:159: FutureWarning: ChainedAssignmentError: behaviour will change in pandas 3.0!
+You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
+A typical example is when you are setting values in a column of a DataFrame, like:
+
+df["col"][row_indexer] = value
+
+Use `df.loc[row_indexer, "col"] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+  df["split"] = split
+{
+  "mixed_benign_unique_pool": 1807080,
+  "attacklab_http_suspicious": 1998199,
+  "ml_train_benign": 499899,
+  "ml_train_benign_by_label": {
+    "0": 499899
+  },
+  "ml_val_benign": 499923,
+  "ml_val_benign_by_label": {
+    "0": 499923
+  },
+  "ml_val_attacks": 260000,
+  "ml_val_attacks_by_label": {
+    "1": 260000
+  },
+  "ml_test": 25000,
+  "ml_test_by_label": {
+    "0": 15000,
+    "1": 10000
+  },
+  "mixed_benign": 25000,
+  "mixed_benign_by_label": {
+    "0": 25000
+  },
+  "nlp_train": 22063,
+  "nlp_train_by_label": {
+    "0": 13513,
+    "1": 8550
+  },
+  "nlp_val": 4728,
+  "nlp_val_by_label": {
+    "0": 2896,
+    "1": 1832
+  },
+  "nlp_test": 4728,
+  "nlp_test_by_label": {
+    "0": 2895,
+    "1": 1833
+  }
+}
+.venv/bin/python scripts/evaluation/build_ml_features.py
+ml_train_benign 499899 {0: 499899}
+ml_val_benign 499923 {0: 499923}
+ml_val_attacks 260000 {1: 260000}
+ml_test 25000 {0: 15000, 1: 10000}
+docker build -f services/retrain/Dockerfile -t mlnlp-retrain .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 337B done
+#1 WARN: StageNameCasing: Stage name 'BASE' should be lowercase (line 1)
+#1 WARN: FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 1)
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.13.12-slim
+#2 DONE 1.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/7] FROM docker.io/library/python:3.13.12-slim@sha256:f1927c75e81efd1e091dbd64b6c0ecaa5630b38635a3d1c04034ac636e1f94c8
+#4 resolve docker.io/library/python:3.13.12-slim@sha256:f1927c75e81efd1e091dbd64b6c0ecaa5630b38635a3d1c04034ac636e1f94c8 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 245.24kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/7] WORKDIR /app
+#6 CACHED
+
+#7 [3/7] COPY services/retrain/requirements.txt services/retrain/constraints.txt ./
+#7 CACHED
+
+#8 [4/7] RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
+#8 CACHED
+
+#9 [5/7] COPY common /app/common
+#9 DONE 0.0s
+
+#10 [6/7] COPY jobs/retrain /app/jobs/retrain
+#10 DONE 0.0s
+
+#11 [7/7] COPY rules /app/rules
+#11 DONE 0.0s
+
+#12 exporting to image
+#12 exporting layers 0.0s done
+#12 exporting manifest sha256:f005ab3cd82f3cc041d067ae97d719e7d60db3d9290be35f8f7b7daab7abd847 done
+#12 exporting config sha256:57008b18092aa6948a96ce4ec31021c411632982a9549c9600d68a1bdc268efc done
+#12 exporting attestation manifest sha256:91076b442746504000c7ccbaf20f9300b7c392c3f0d0af7f28408bbf805f8381 done
+#12 exporting manifest list sha256:e1a36723a17813c2e72dd8245039907722c35da4b0df7d5e5b646ff6fdbc31db
+#12 exporting manifest list sha256:e1a36723a17813c2e72dd8245039907722c35da4b0df7d5e5b646ff6fdbc31db done
+#12 naming to docker.io/library/mlnlp-retrain:latest done
+#12 unpacking to docker.io/library/mlnlp-retrain:latest 0.0s done
+#12 DONE 0.1s
+
+ [33m2 warnings found (use docker --debug to expand):
+[0m - StageNameCasing: Stage name 'BASE' should be lowercase (line 1)
+ - FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 1)
+docker compose build preprocess ml-inference nlp-inference fusion alerting orchestrator
+ Image mlnlp-orchestrator Building 
+ Image mlnlp-fusion Building 
+ Image mlnlp-ml-inference Building 
+ Image mlnlp-preprocess Building 
+ Image mlnlp-nlp-inference Building 
+ Image mlnlp-alerting Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.23kB done
+#1 DONE 0.0s
+
+#2 [preprocess internal] load build definition from Dockerfile
+#2 transferring dockerfile: 365B done
+#2 DONE 0.0s
+
+#3 [ml-inference internal] load build definition from Dockerfile
+#3 transferring dockerfile: 624B done
+#3 DONE 0.0s
+
+#4 [orchestrator internal] load build definition from Dockerfile
+#4 transferring dockerfile: 404B done
+#4 DONE 0.0s
+
+#5 [fusion internal] load build definition from Dockerfile
+#5 transferring dockerfile: 411B done
+#5 DONE 0.0s
+
+#6 [nlp-inference internal] load build definition from Dockerfile
+#6 transferring dockerfile: 362B done
+#6 DONE 0.0s
+
+#7 [alerting internal] load build definition from Dockerfile
+#7 transferring dockerfile: 530B done
+#7 DONE 0.0s
+
+#8 [fusion internal] load metadata for docker.io/library/python:3.13.12-slim
+#8 DONE 0.2s
+
+#9 [fusion internal] load .dockerignore
+#9 transferring context: 2B done
+#9 DONE 0.0s
+
+#10 [orchestrator internal] load build context
+#10 transferring context: 37.40kB done
+#10 DONE 0.0s
+
+#11 [fusion internal] load build context
+#11 transferring context: 84.06kB 0.0s done
+#11 DONE 0.0s
+
+#12 [preprocess internal] load build context
+#12 transferring context: 83.31kB 0.0s done
+#12 DONE 0.0s
+
+#13 [ml-inference internal] load build context
+#13 transferring context: 91.17kB 0.0s done
+#13 DONE 0.0s
+
+#14 [nlp-inference internal] load build context
+#14 transferring context: 92.65kB 0.0s done
+#14 DONE 0.0s
+
+#15 [alerting internal] load build context
+#15 transferring context: 95.77kB 0.0s done
+#15 DONE 0.0s
+
+#16 [fusion 3/6] COPY services/fusion/requirements.txt services/fusion/constraints.txt ./
+#16 CACHED
+
+#17 [fusion 4/6] RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
+#17 CACHED
+
+#18 [fusion 1/6] FROM docker.io/library/python:3.13.12-slim@sha256:f1927c75e81efd1e091dbd64b6c0ecaa5630b38635a3d1c04034ac636e1f94c8
+#18 resolve docker.io/library/python:3.13.12-slim@sha256:f1927c75e81efd1e091dbd64b6c0ecaa5630b38635a3d1c04034ac636e1f94c8 0.0s done
+#18 DONE 0.0s
+
+#19 [preprocess 3/6] COPY services/preprocess/requirements.txt services/preprocess/constraints.txt ./
+#19 CACHED
+
+#20 [preprocess 4/6] RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
+#20 CACHED
+
+#21 [ml-inference 3/7] COPY services/ml_infer/requirements.txt services/ml_infer/constraints.txt ./
+#21 CACHED
+
+#22 [ml-inference 4/7] RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
+#22 CACHED
+
+#23 [orchestrator 3/6] COPY services/orchestrator/requirements.txt services/orchestrator/constraints.txt ./
+#23 CACHED
+
+#24 [orchestrator 4/6] RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
+#24 CACHED
+
+#25 [alerting builder 3/4] COPY services/alerting/requirements.txt services/alerting/constraints.txt ./
+#25 CACHED
+
+#26 [alerting builder 4/4] RUN pip install --no-cache-dir --prefix=/install -r requirements.txt -c constraints.txt
+#26 CACHED
+
+#27 [alerting stage-1 3/6] COPY --from=builder /install /usr/local
+#27 CACHED
+
+#28 [nlp-inference 3/6] COPY services/nlp_infer/requirements.txt services/nlp_infer/constraints.txt ./
+#28 CACHED
+
+#29 [alerting 2/6] WORKDIR /app
+#29 CACHED
+
+#30 [nlp-inference 4/6] RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
+#30 CACHED
+
+#31 [fusion 5/6] COPY common /app/common
+#31 DONE 0.1s
+
+#32 [ml-inference 5/7] COPY common /app/common
+#32 DONE 0.1s
+
+#33 [orchestrator 5/6] COPY common /app/common
+#33 DONE 0.1s
+
+#34 [preprocess 5/6] COPY common /app/common
+#34 DONE 0.1s
+
+#35 [alerting stage-1 4/6] COPY common /app/common
+#35 DONE 0.1s
+
+#36 [nlp-inference 5/6] COPY common /app/common
+#36 DONE 0.1s
+
+#37 [fusion 6/6] COPY services/fusion/main.py .
+#37 DONE 0.1s
+
+#38 [ml-inference 6/7] COPY services/ml_infer/main.py .
+#38 DONE 0.1s
+
+#39 [alerting stage-1 5/6] COPY services/alerting/main.py .
+#39 DONE 0.1s
+
+#40 [preprocess 6/6] COPY services/preprocess/main.py .
+#40 DONE 0.1s
+
+#41 [orchestrator 6/6] COPY services/orchestrator/main.py services/orchestrator/policy.py ./
+#41 DONE 0.1s
+
+#42 [nlp-inference 6/6] COPY services/nlp_infer/main.py .
+#42 DONE 0.1s
+
+#43 [nlp-inference] exporting to image
+#43 exporting layers
+#43 ...
+
+#44 [alerting stage-1 6/6] COPY policies/recommended_actions.json /app/policies/
+#44 DONE 0.2s
+
+#45 [ml-inference 7/7] COPY models/ml/ml_config.json .
+#45 DONE 0.2s
+
+#43 [nlp-inference] exporting to image
+#43 exporting layers 0.2s done
+#43 exporting manifest sha256:b10c7313b3a0ac69eacc1967e6ea9dbdbea88df8c03f03c55e869abee0c2e2dd 0.0s done
+#43 exporting config sha256:77264508fc4027f85df98c1119360e1c225861983343d6e0862532a1fe99211e 0.0s done
+#43 exporting attestation manifest sha256:8acbf25a2c9d43793746e46b4fc1fc1397a4130143cddb1f27e44f595c811ea0
+#43 exporting attestation manifest sha256:8acbf25a2c9d43793746e46b4fc1fc1397a4130143cddb1f27e44f595c811ea0 0.0s done
+#43 exporting manifest list sha256:4fd756ed55908ee0092f96f311bb55aa1acb887b01afc75f27322dd6fe59dd17 0.0s done
+#43 naming to docker.io/library/mlnlp-nlp-inference:latest 0.0s done
+#43 unpacking to docker.io/library/mlnlp-nlp-inference:latest
+#43 unpacking to docker.io/library/mlnlp-nlp-inference:latest 0.0s done
+#43 DONE 0.4s
+
+#46 [fusion] exporting to image
+#46 exporting layers 0.2s done
+#46 exporting manifest sha256:df45ad72c4a46981273b8f5cd7f39f0c2006abc8eaa02cd4e5a024e447e80c77 0.0s done
+#46 exporting config sha256:8e7da40cb604d618a9dccbe6545d660946af7ccb46ea93365ea04b50e2a76d24 0.0s done
+#46 exporting attestation manifest sha256:a98d6ae892fc62d23603b04e10f142ca4d52132f10b4f0db9a61e88f2bd27e9e 0.0s done
+#46 exporting manifest list sha256:ab2c75ef1eb6903f2ae3cf8a6ad0fa498d444fb25915f586cf230cf40f323241 0.0s done
+#46 naming to docker.io/library/mlnlp-fusion:latest 0.0s done
+#46 unpacking to docker.io/library/mlnlp-fusion:latest 0.1s done
+#46 DONE 0.4s
+
+#47 [orchestrator] exporting to image
+#47 exporting layers 0.2s done
+#47 exporting manifest sha256:2d46bee718eeeb3e9eef46874ad383fd048de6f13f6d299805651226a3f87e4e 0.0s done
+#47 exporting config sha256:70758b2edcdbfeab5e051d839eabee8d0259c269714b3ffb059ed2f637f23f2b 0.0s done
+#47 exporting attestation manifest sha256:ed01b0b4935246f9f16b7bedc67b4b20af2a9e1e0d06660e4e82615bce38f1f5 0.0s done
+#47 exporting manifest list sha256:a5842d2371d5f84a82bbb6ae5b84932919c8084bdddc03ab347229242d679979 0.0s done
+#47 naming to docker.io/library/mlnlp-orchestrator:latest 0.0s done
+#47 unpacking to docker.io/library/mlnlp-orchestrator:latest 0.1s done
+#47 DONE 0.4s
+
+#48 [preprocess] exporting to image
+#48 exporting layers 0.2s done
+#48 exporting manifest sha256:ebc6a190e543e98d6660512e3523418679cb04be74435f7bb0f90973001cb482 0.0s done
+#48 exporting config sha256:e13ba3cf3f085dbaf0546101814d0296454a3f762c1f87db531c247b679a66c5 0.0s done
+#48 exporting attestation manifest sha256:7774d765a1ddd0ca465621024cc798acd86bdc2831fb7706a97d0c2c6aa11ce0 0.0s done
+#48 exporting manifest list sha256:b4daa7ca120b42d750aaab6a0a303e5eae6b01aa7e57721a1c7dc5bbea95462f 0.0s done
+#48 naming to docker.io/library/mlnlp-preprocess:latest done
+#48 unpacking to docker.io/library/mlnlp-preprocess:latest 0.1s done
+#48 DONE 0.4s
+
+#49 [ml-inference] exporting to image
+#49 exporting layers 0.2s done
+#49 exporting manifest sha256:ec0c65fa53daea4110902c809b537f7c845f87e867e1450347981d1f98ea4f0e 0.0s done
+#49 exporting config sha256:b7e2ef985740934f8be34df275c5d28dc655cd499d7aa8b762ee5d552bafbafe 0.0s done
+#49 exporting attestation manifest sha256:3126732899a8a52484fe99709878a57074fee9d0ed24758df65f864738c89254 0.1s done
+#49 exporting manifest list sha256:d03a319a19b8f1546e1fc3d07cfcaa8f0ddd577e16715a64a67397d9ece308e0
+#49 exporting manifest list sha256:d03a319a19b8f1546e1fc3d07cfcaa8f0ddd577e16715a64a67397d9ece308e0 0.0s done
+#49 naming to docker.io/library/mlnlp-ml-inference:latest done
+#49 unpacking to docker.io/library/mlnlp-ml-inference:latest 0.0s done
+#49 DONE 0.4s
+
+#50 [alerting] exporting to image
+#50 exporting layers 0.2s done
+#50 exporting manifest sha256:204bedf8565bc97fa8aaf7bcfc013837da47198ab98b23d753e1f81268468d3f 0.0s done
+#50 exporting config sha256:d6a7e9bb3f79dd6b89b4e87f1e49e42b894bcc1655e3d03e8cb8951f96f8e1e6 0.0s done
+#50 exporting attestation manifest sha256:6c7a72941bdf5ae40ed4d2bbcf377af5474616347a126efba3a1b483f9fdb44c 0.1s done
+#50 exporting manifest list sha256:178dffd08beba652bcf90a5194c6125ae1ac5dbdd3b966d8eae0278934e15b03 0.0s done
+#50 naming to docker.io/library/mlnlp-alerting:latest done
+#50 unpacking to docker.io/library/mlnlp-alerting:latest 0.0s done
+#50 DONE 0.4s
+
+#51 [nlp-inference] resolving provenance for metadata file
+#51 DONE 0.0s
+
+#52 [fusion] resolving provenance for metadata file
+#52 DONE 0.1s
+
+#53 [orchestrator] resolving provenance for metadata file
+#53 DONE 0.1s
+
+#54 [preprocess] resolving provenance for metadata file
+#54 DONE 0.0s
+
+#55 [ml-inference] resolving provenance for metadata file
+#55 DONE 0.0s
+
+#56 [alerting] resolving provenance for metadata file
+#56 DONE 0.0s
+ Image mlnlp-alerting Built 
+ Image mlnlp-orchestrator Built 
+ Image mlnlp-preprocess Built 
+ Image mlnlp-ml-inference Built 
+ Image mlnlp-nlp-inference Built 
+ Image mlnlp-fusion Built 
+docker run --rm -v "$PWD":/w -w /w -e PYTHONHASHSEED=0 --entrypoint python mlnlp-retrain scripts/evaluation/train_ml.py
+if {"ml_val": {"roc_auc": 0.8888917682669285, "pr_auc": 0.7052785505483388, "n": 759923, "pos": 260000}, "ml_test": {"roc_auc": 0.39388348666666667, "pr_auc": 0.36610694803367105, "n": 25000, "pos": 10000}} 3.2s
+ocsvm {"ml_val": {"roc_auc": 0.9543678550804516, "pr_auc": 0.9245182933633961, "n": 759923, "pos": 260000}, "ml_test": {"roc_auc": 0.65704144, "pr_auc": 0.5186328710671374, "n": 25000, "pos": 10000}} 43.8s
+Epoch 1/20
+2026-11-11 15:50:46.375878: E tensorflow/core/framework/node_def_util.cc:680] NodeDef mentions attribute use_unbounded_threadpool which is not in the op definition: Op<name=MapDataset; signature=input_dataset:variant, other_arguments: -> handle:variant; attr=f:func; attr=Targuments:list(type),min=0; attr=output_types:list(type),min=1; attr=output_shapes:list(shape),min=1; attr=use_inter_op_parallelism:bool,default=true; attr=preserve_cardinality:bool,default=false; attr=force_synchronous:bool,default=false; attr=metadata:string,default=""> This may be expected if your graph generating binary is newer  than this binary. Unknown attributes will be ignored. NodeDef: {{node ParallelMapDatasetV2/_15}}
+2813/2813 - 2s - 717us/step - loss: 0.0193 - val_loss: 6.0194e-04
+Epoch 2/20
+2813/2813 - 2s - 549us/step - loss: 0.0016 - val_loss: 3.9703e-04
+Epoch 3/20
+2813/2813 - 2s - 553us/step - loss: 0.0015 - val_loss: 2.7444e-04
+Epoch 4/20
+2813/2813 - 2s - 559us/step - loss: 0.0011 - val_loss: 3.1522e-04
+Epoch 5/20
+2813/2813 - 2s - 546us/step - loss: 0.0011 - val_loss: 2.9223e-04
+Epoch 6/20
+2813/2813 - 2s - 548us/step - loss: 0.0010 - val_loss: 2.9594e-04
+Epoch 7/20
+2813/2813 - 1s - 530us/step - loss: 8.8952e-04 - val_loss: 2.6428e-04
+Epoch 8/20
+2813/2813 - 2s - 540us/step - loss: 9.2054e-04 - val_loss: 1.8937e-04
+Epoch 9/20
+2813/2813 - 2s - 539us/step - loss: 7.6847e-04 - val_loss: 2.5837e-04
+Epoch 10/20
+2813/2813 - 2s - 546us/step - loss: 7.8001e-04 - val_loss: 1.6228e-04
+Epoch 11/20
+2813/2813 - 2s - 536us/step - loss: 7.3993e-04 - val_loss: 1.4205e-04
+Epoch 12/20
+2813/2813 - 2s - 544us/step - loss: 8.3005e-04 - val_loss: 8.8848e-05
+Epoch 13/20
+2813/2813 - 2s - 538us/step - loss: 8.3710e-04 - val_loss: 1.2691e-04
+Epoch 14/20
+2813/2813 - 2s - 541us/step - loss: 5.8999e-04 - val_loss: 1.0585e-04
+Epoch 15/20
+2813/2813 - 2s - 554us/step - loss: 6.4003e-04 - val_loss: 8.9474e-05
+Epoch 16/20
+2813/2813 - 2s - 553us/step - loss: 7.2473e-04 - val_loss: 1.0253e-04
+Epoch 17/20
+2813/2813 - 2s - 539us/step - loss: 6.0432e-04 - val_loss: 1.2605e-04
+Epoch 18/20
+2813/2813 - 2s - 561us/step - loss: 5.0942e-04 - val_loss: 1.1596e-04
+Epoch 19/20
+2813/2813 - 2s - 558us/step - loss: 6.9590e-04 - val_loss: 1.8144e-04
+Epoch 20/20
+2813/2813 - 2s - 541us/step - loss: 6.6931e-04 - val_loss: 1.9252e-04
+2026-11-11 15:51:17.590572: E tensorflow/core/framework/node_def_util.cc:680] NodeDef mentions attribute use_unbounded_threadpool which is not in the op definition: Op<name=MapDataset; signature=input_dataset:variant, other_arguments: -> handle:variant; attr=f:func; attr=Targuments:list(type),min=0; attr=output_types:list(type),min=1; attr=output_shapes:list(shape),min=1; attr=use_inter_op_parallelism:bool,default=true; attr=preserve_cardinality:bool,default=false; attr=force_synchronous:bool,default=false; attr=metadata:string,default=""> This may be expected if your graph generating binary is newer  than this binary. Unknown attributes will be ignored. NodeDef: {{node ParallelMapDatasetV2/_14}}
+ae {"ml_val": {"roc_auc": 0.9471431474793273, "pr_auc": 0.8821062046903506, "n": 759923, "pos": 260000}, "ml_test": {"roc_auc": 0.5325736666666667, "pr_auc": 0.38883541064570115, "n": 25000, "pos": 10000}} 31.8s
+Epoch 1/15
+2026-11-11 15:51:26.165798: E tensorflow/core/framework/node_def_util.cc:680] NodeDef mentions attribute use_unbounded_threadpool which is not in the op definition: Op<name=MapDataset; signature=input_dataset:variant, other_arguments: -> handle:variant; attr=f:func; attr=Targuments:list(type),min=0; attr=output_types:list(type),min=1; attr=output_shapes:list(shape),min=1; attr=use_inter_op_parallelism:bool,default=true; attr=preserve_cardinality:bool,default=false; attr=force_synchronous:bool,default=false; attr=metadata:string,default=""> This may be expected if your graph generating binary is newer  than this binary. Unknown attributes will be ignored. NodeDef: {{node ParallelMapDatasetV2/_15}}
+2813/2813 - 9s - 3ms/step - loss: 0.3831 - val_loss: 0.2351
+Epoch 2/15
+2813/2813 - 7s - 3ms/step - loss: 0.2205 - val_loss: 0.1805
+Epoch 3/15
+2813/2813 - 7s - 3ms/step - loss: 0.0922 - val_loss: 0.0564
+Epoch 4/15
+2813/2813 - 7s - 3ms/step - loss: 0.0422 - val_loss: 0.0358
+Epoch 5/15
+2813/2813 - 8s - 3ms/step - loss: 0.0285 - val_loss: 0.0197
+Epoch 6/15
+2813/2813 - 7s - 3ms/step - loss: 0.0551 - val_loss: 0.0324
+Epoch 7/15
+2813/2813 - 8s - 3ms/step - loss: 0.0294 - val_loss: 0.0131
+Epoch 8/15
+2813/2813 - 7s - 3ms/step - loss: 0.0153 - val_loss: 0.0083
+Epoch 9/15
+2813/2813 - 7s - 3ms/step - loss: 0.0104 - val_loss: 0.0064
+Epoch 10/15
+2813/2813 - 7s - 3ms/step - loss: 0.0088 - val_loss: 0.0053
+Epoch 11/15
+2813/2813 - 8s - 3ms/step - loss: 0.0066 - val_loss: 0.0038
+Epoch 12/15
+2813/2813 - 8s - 3ms/step - loss: 0.0051 - val_loss: 0.0034
+Epoch 13/15
+2813/2813 - 8s - 3ms/step - loss: 0.0041 - val_loss: 0.0033
+Epoch 14/15
+2813/2813 - 8s - 3ms/step - loss: 0.0044 - val_loss: 0.0045
+Epoch 15/15
+2813/2813 - 8s - 3ms/step - loss: 0.0039 - val_loss: 0.0025
+2026-11-11 15:53:12.417752: E tensorflow/core/framework/node_def_util.cc:680] NodeDef mentions attribute use_unbounded_threadpool which is not in the op definition: Op<name=MapDataset; signature=input_dataset:variant, other_arguments: -> handle:variant; attr=f:func; attr=Targuments:list(type),min=0; attr=output_types:list(type),min=1; attr=output_shapes:list(shape),min=1; attr=use_inter_op_parallelism:bool,default=true; attr=preserve_cardinality:bool,default=false; attr=force_synchronous:bool,default=false; attr=metadata:string,default=""> This may be expected if your graph generating binary is newer  than this binary. Unknown attributes will be ignored. NodeDef: {{node ParallelMapDatasetV2/_14}}
+2026-11-11 15:53:17.466551: E tensorflow/core/framework/node_def_util.cc:680] NodeDef mentions attribute use_unbounded_threadpool which is not in the op definition: Op<name=MapDataset; signature=input_dataset:variant, other_arguments: -> handle:variant; attr=f:func; attr=Targuments:list(type),min=0; attr=output_types:list(type),min=1; attr=output_shapes:list(shape),min=1; attr=use_inter_op_parallelism:bool,default=true; attr=preserve_cardinality:bool,default=false; attr=force_synchronous:bool,default=false; attr=metadata:string,default=""> This may be expected if your graph generating binary is newer  than this binary. Unknown attributes will be ignored. NodeDef: {{node ParallelMapDatasetV2/_14}}
+lstm_ae {"ml_val": {"roc_auc": 0.9847175663129045, "pr_auc": 0.9704813226371166, "n": 759923, "pos": 260000}, "ml_test": {"roc_auc": 0.6628936000000001, "pr_auc": 0.4961429641933391, "n": 25000, "pos": 10000}} 119.7s
+docker run --rm -v "$PWD":/w -w /w -e PYTHONHASHSEED=0 -e RULES_FILE=/w/rules/base_rules.json --entrypoint python mlnlp-retrain scripts/evaluation/train_nlp.py
+tfidf_lr {"val": {"n": 4728, "pos": 1832, "threshold": 0.3439290044189051, "precision": 0.9967248908296943, "recall": 0.9967248908296943, "f1": 0.9967248908296943, "roc_auc": 0.9992272129605058, "pr_auc": 0.9985794069626973}, "test": {"n": 4728, "pos": 1833, "threshold": 0.3439290044189051, "precision": 0.9972572682391662, "recall": 0.9918166939443536, "f1": 0.9945295404814004, "roc_auc": 0.9989572291523565, "pr_auc": 0.9979998929351461}}
+char_sgd {"val": {"n": 4728, "pos": 1832, "threshold": 0.24252005711841054, "precision": 1.0, "recall": 0.9994541484716157, "f1": 0.9997269997269997, "roc_auc": 0.9999990575767811, "pr_auc": 0.9999985142854426}, "test": {"n": 4728, "pos": 1833, "threshold": 0.24252005711841054, "precision": 1.0, "recall": 0.9961811238406983, "f1": 0.9980869089915277, "roc_auc": 0.9996623031790048, "pr_auc": 0.9996294812681578}}
+sql_injection 5907 1260
+skip nosql_injection 0 0
+ldap_injection 3 2
+cmd_injection 1336 308
+xss 378 74
+/w/scripts/evaluation/train_nlp.py:73: RuntimeWarning: invalid value encountered in divide
+  f1s = np.where((prec + rec) > 0, 2 * prec * rec / (prec + rec), 0.0)[:-1]
+ssrf 31 3
+skip api_key_exposure 0 0
+skip auth_bruteforce 0 0
+skip credential_stuffing 0 0
+skip idor 1 0
+skip misconfiguration 0 0
+skip data_exposure 3 0
+/w/scripts/evaluation/train_nlp.py:73: RuntimeWarning: invalid value encountered in divide
+  f1s = np.where((prec + rec) > 0, 2 * prec * rec / (prec + rec), 0.0)[:-1]
+dos 47 10
+skip websocket 0 0
+skip ssrf_sensitive 1 0
+skip business_logic 0 0
+docker run --rm -v "$PWD":/w -w /w --entrypoint python mlnlp-retrain scripts/evaluation/calibrate_ml.py
+if done
+ocsvm done
+ae done
+lstm_ae done
+{
+  "kinds": {},
+  "candidates": {
+    "max": {
+      "roc_auc": 0.9754006832436809,
+      "pr_auc": 0.94839303473184
+    },
+    "mean": {
+      "roc_auc": 0.957355705717142,
+      "pr_auc": 0.8918877947773336
+    },
+    "median": {
+      "roc_auc": 0.9704775207535807,
+      "pr_auc": 0.9317684831805175
+    }
+  },
+  "selected": "max",
+  "criterion": "max ROC-AUC on full ML-val",
+  "ML_THRESHOLD": 0.9965416603544918,
+  "fpr_val_benign_at_thr": 0.0100255439337658,
+  "recall_val_attacks_at_thr": 0.6365
+}
+docker run --rm -v "$PWD":/w -w /w --entrypoint python mlnlp-retrain scripts/evaluation/eval_ml_test.py
+{
+  "n": 25000,
+  "pos": 10000,
+  "aggregate": "max",
+  "ML_THRESHOLD": 0.9965416603544918,
+  "per_model": {
+    "if": {
+      "roc_auc": 0.39388348666666667,
+      "pr_auc": 0.36610694803367105
+    },
+    "ocsvm": {
+      "roc_auc": 0.65704144,
+      "pr_auc": 0.5186328710671374
+    },
+    "ae": {
+      "roc_auc": 0.53335696,
+      "pr_auc": 0.410391383684594
+    },
+    "lstm_ae": {
+      "roc_auc": 0.6635055066666666,
+      "pr_auc": 0.5168387502432192
+    }
+  },
+  "aggregated": {
+    "roc_auc": 0.65723464,
+    "pr_auc": 0.514147646307938,
+    "TP": 6337,
+    "FP": 5407,
+    "FN": 3663,
+    "TN": 9593,
+    "recall": 0.6337,
+    "fpr": 0.36046666666666666,
+    "precision": 0.5395946866485014
+  },
+  "by_source": {
+    "attacklab": {
+      "n": 10000,
+      "flagged_rate": 0.6337
+    },
+    "csic2010": {
+      "n": 15000,
+      "flagged_rate": 0.36046666666666666
+    }
+  }
+}
+ML_THRESHOLD=0.7 NLP_THRESHOLD=0.60 FUSION_ALPHA=0.6 FUSION_BETA=0.4 FUSION_LEVELS=0.3,0.5,0.6,0.8 FUSION_NORMAL_THR=0.0 docker compose up -d --force-recreate opensearch os-init redis preprocess ml-inference nlp-inference fusion alerting orchestrator
+ Network mlnlp_default Creating 
+ Volume mlnlp_opensearch-data Creating 
+ Volume mlnlp_opensearch-data Creating 
+ Network mlnlp_default Creating 
+ Volume mlnlp_opensearch-data Created 
+ Volume mlnlp_opensearch-data Created 
+ Network mlnlp_default Created 
+ Network mlnlp_default Created 
+ Container mlnlp-ml-inference-1 Creating 
+ Container mlnlp-preprocess-1 Creating 
+ Container mlnlp-opensearch-1 Creating 
+ Container mlnlp-nlp-inference-1 Creating 
+ Container mlnlp-redis-1 Creating 
+ Container mlnlp-opensearch-1 Created 
+ Container mlnlp-os-init-1 Creating 
+ Container mlnlp-preprocess-1 Created 
+ Container mlnlp-ml-inference-1 Created 
+ Container mlnlp-nlp-inference-1 Created 
+ Container mlnlp-redis-1 Created 
+ Container mlnlp-fusion-1 Creating 
+ Container mlnlp-alerting-1 Creating 
+ Container mlnlp-os-init-1 Created 
+ Container mlnlp-fusion-1 Created 
+ Container mlnlp-alerting-1 Created 
+ Container mlnlp-orchestrator-1 Creating 
+ Container mlnlp-orchestrator-1 Created 
+ Container mlnlp-ml-inference-1 Starting 
+ Container mlnlp-opensearch-1 Starting 
+ Container mlnlp-nlp-inference-1 Starting 
+ Container mlnlp-preprocess-1 Starting 
+ Container mlnlp-redis-1 Starting 
+ Container mlnlp-ml-inference-1 Started 
+ Container mlnlp-opensearch-1 Started 
+ Container mlnlp-opensearch-1 Waiting 
+ Container mlnlp-nlp-inference-1 Started 
+ Container mlnlp-preprocess-1 Started 
+ Container mlnlp-redis-1 Started 
+ Container mlnlp-redis-1 Waiting 
+ Container mlnlp-opensearch-1 Waiting 
+ Container mlnlp-redis-1 Waiting 
+ Container mlnlp-redis-1 Healthy 
+ Container mlnlp-redis-1 Healthy 
+ Container mlnlp-fusion-1 Starting 
+ Container mlnlp-fusion-1 Started 
+ Container mlnlp-opensearch-1 Healthy 
+ Container mlnlp-alerting-1 Starting 
+ Container mlnlp-alerting-1 Started 
+ Container mlnlp-fusion-1 Waiting 
+ Container mlnlp-alerting-1 Waiting 
+ Container mlnlp-preprocess-1 Waiting 
+ Container mlnlp-ml-inference-1 Waiting 
+ Container mlnlp-nlp-inference-1 Waiting 
+ Container mlnlp-opensearch-1 Healthy 
+ Container mlnlp-os-init-1 Starting 
+ Container mlnlp-os-init-1 Started 
+ Container mlnlp-ml-inference-1 Healthy 
+ Container mlnlp-nlp-inference-1 Healthy 
+ Container mlnlp-fusion-1 Healthy 
+ Container mlnlp-preprocess-1 Healthy 
+ Container mlnlp-alerting-1 Healthy 
+ Container mlnlp-orchestrator-1 Starting 
+ Container mlnlp-orchestrator-1 Started 
+sleep 30
+set -a; . ./.env; set +a; ML_THRESHOLD=0.7 NLP_THRESHOLD=0.60 FUSION_ALPHA=0.6 FUSION_BETA=0.4 FUSION_LEVELS=0.3,0.5,0.6,0.8 FUSION_NORMAL_THR=0.0 .venv/bin/python scripts/evaluation/run_stream.py --set validation --run-id reference/validation --concurrency 8
+{"n": 20000, "counts": {"benign:wsal_labeled": 10000, "attack:attacklab": 9615, "attack:csic2010": 385}}
+0/20000 1s
+1000/20000 40s
+2000/20000 75s
+3000/20000 107s
+4000/20000 139s
+5000/20000 171s
+6000/20000 204s
+7000/20000 235s
+8000/20000 267s
+9000/20000 300s
+10000/20000 333s
+11000/20000 366s
+12000/20000 399s
+13000/20000 431s
+14000/20000 463s
+15000/20000 495s
+16000/20000 528s
+17000/20000 562s
+18000/20000 594s
+19000/20000 627s
+done 20000 events in 660s
+docker compose run --rm --no-deps -v "$PWD":/w -w /w --entrypoint python fusion \
+	  scripts/evaluation/select_thresholds.py --run reference/validation
+ Container mlnlp-fusion-run-f5a48941c2cf Creating 
+ Container mlnlp-fusion-run-f5a48941c2cf Created 
+INFO:fusion:Connected to Redis at redis://redis:6379/0
+INFO:fusion:impact_policy_loaded path="/app/policies/impact_policy.json"
+{
+  "selected_on": "reference/validation",
+  "n_val_benign": 10000,
+  "n_val_attacks": 10000,
+  "FUSION_NORMAL_THR": 0.886486,
+  "FUSION_LEVELS": [
+    0.997392,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "medium_boundary_feasible": true,
+  "ML_THRESHOLD": 0.9965416603544918,
+  "NLP_THRESHOLD": 0.3439290044189051,
+  "nlp_thresholds_val": {
+    "tfidf_lr": 0.3439290044189051,
+    "char_sgd": 0.24252005711841054
+  },
+  "fusion_mode": "weighted",
+  "alpha": 1.0,
+  "beta": 0.0,
+  "alpha_roc_auc_val": {
+    "0.0": 0.67913334,
+    "0.1": 0.84388525,
+    "0.2": 0.85151029,
+    "0.3": 0.88605772,
+    "0.4": 0.90847082,
+    "0.5": 0.92367183,
+    "0.6": 0.93550338,
+    "0.7": 0.944304,
+    "0.8": 0.95370436,
+    "0.9": 0.96385502,
+    "1.0": 0.974917575
+  },
+  "ML_AGGREGATE": "max",
+  "models_dir": "models",
+  "impact_matrix": [
+    [
+      "low",
+      "low",
+      "low"
+    ],
+    [
+      "medium",
+      "high",
+      "high"
+    ],
+    [
+      "high",
+      "high",
+      "critical"
+    ],
+    [
+      "high",
+      "critical",
+      "critical"
+    ]
+  ],
+  "topic_escalation": "disabled",
+  "validation_metrics_at_frozen_values": {
+    "medium_plus": {
+      "fpr_val_benign": 0.01,
+      "recall_val_attacks": 0.5902
+    },
+    "low_plus": {
+      "fpr_val_benign": 0.1727,
+      "recall_val_attacks": 0.9908
+    }
+  },
+  "criteria": {
+    "medium_plus_fpr_max": 0.01,
+    "low_plus_recall_min": 0.99
+  }
+}
+shasum -a 256 runs/reference/validation/frozen_config.json runs/reference/validation/frozen.env policies/impact_policy.json \
+	  models/ml/*.joblib models/ml/*.json models/nlp/*.joblib models/nlp/*.json > runs/reference/validation/frozen_hashes.txt
+for H in 1 0; do \
+	  set -a; . ./.env; . runs/reference/validation/frozen.env; MODELS_DIR=./models; IMPACT_POLICY_HOST=./policies/impact_policy.json; HYST_ENABLED=$H; set +a; \
+	  docker compose up -d --force-recreate ml-inference nlp-inference fusion && sleep 20 && \
+	  docker compose exec -T redis redis-cli FLUSHALL && \
+	  RID=reference/mixed-no-hysteresis; [ $H = 1 ] && RID=reference/mixed; \
+	  .venv/bin/python scripts/evaluation/run_stream.py --set mixed --run-id $RID || exit 1; \
+	done
+ Container mlnlp-redis-1 Running 
+ Container mlnlp-ml-inference-1 Recreate 
+ Container mlnlp-nlp-inference-1 Recreate 
+ Container mlnlp-fusion-1 Recreate 
+ Container mlnlp-fusion-1 Recreated 
+ Container mlnlp-nlp-inference-1 Recreated 
+ Container mlnlp-ml-inference-1 Recreated 
+ Container mlnlp-nlp-inference-1 Starting 
+ Container mlnlp-redis-1 Waiting 
+ Container mlnlp-ml-inference-1 Starting 
+ Container mlnlp-nlp-inference-1 Started 
+ Container mlnlp-ml-inference-1 Started 
+ Container mlnlp-redis-1 Healthy 
+ Container mlnlp-fusion-1 Starting 
+ Container mlnlp-fusion-1 Started 
+OK
+Target Orchestrator URL: http://localhost:8000/process
+
+Processed 1025 events in 0.004s (~0.0 ms/event, 255279.4 events/sec)
+
+[1;32mDone.[0m
+{"n": 26025, "counts": {"benign:wsal_labeled": 25000, "attack:smoke": 1025}}
+0/26025 0s
+1000/26025 64s
+2000/26025 129s
+3000/26025 192s
+4000/26025 256s
+5000/26025 322s
+6000/26025 387s
+7000/26025 451s
+8000/26025 520s
+9000/26025 587s
+10000/26025 652s
+11000/26025 722s
+12000/26025 788s
+13000/26025 853s
+14000/26025 924s
+15000/26025 992s
+16000/26025 1058s
+17000/26025 1130s
+18000/26025 1197s
+19000/26025 1265s
+20000/26025 1333s
+21000/26025 1399s
+22000/26025 1469s
+23000/26025 1536s
+24000/26025 1602s
+25000/26025 1672s
+26000/26025 1738s
+done 26025 events in 1740s
+ Container mlnlp-redis-1 Running 
+ Container mlnlp-fusion-1 Recreate 
+ Container mlnlp-ml-inference-1 Recreate 
+ Container mlnlp-nlp-inference-1 Recreate 
+ Container mlnlp-fusion-1 Recreated 
+ Container mlnlp-nlp-inference-1 Recreated 
+ Container mlnlp-ml-inference-1 Recreated 
+ Container mlnlp-ml-inference-1 Starting 
+ Container mlnlp-redis-1 Waiting 
+ Container mlnlp-nlp-inference-1 Starting 
+ Container mlnlp-ml-inference-1 Started 
+ Container mlnlp-nlp-inference-1 Started 
+ Container mlnlp-redis-1 Healthy 
+ Container mlnlp-fusion-1 Starting 
+ Container mlnlp-fusion-1 Started 
+OK
+Target Orchestrator URL: http://localhost:8000/process
+
+Processed 1025 events in 0.004s (~0.0 ms/event, 253558.6 events/sec)
+
+[1;32mDone.[0m
+{"n": 26025, "counts": {"benign:wsal_labeled": 25000, "attack:smoke": 1025}}
+0/26025 0s
+1000/26025 64s
+2000/26025 129s
+3000/26025 192s
+4000/26025 257s
+5000/26025 323s
+6000/26025 388s
+7000/26025 453s
+8000/26025 520s
+9000/26025 585s
+10000/26025 648s
+11000/26025 712s
+12000/26025 775s
+13000/26025 839s
+14000/26025 905s
+15000/26025 971s
+16000/26025 1035s
+17000/26025 1100s
+18000/26025 1169s
+19000/26025 1235s
+20000/26025 1298s
+21000/26025 1361s
+22000/26025 1424s
+23000/26025 1488s
+24000/26025 1554s
+25000/26025 1618s
+26000/26025 1682s
+done 26025 events in 1684s
+.venv/bin/python scripts/evaluation/make_tables.py --run reference/mixed --run reference/mixed-no-hysteresis
+<repo>/.venv/lib/python3.14/site-packages/pandas/core/frame.py:5239: FutureWarning: ChainedAssignmentError: behaviour will change in pandas 3.0!
+You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
+A typical example is when you are setting values in a column of a DataFrame, like:
+
+df["col"][row_indexer] = value
+
+Use `df.loc[row_indexer, "col"] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+  data[k] = com.apply_if_callable(v, data)
+<repo>/.venv/lib/python3.14/site-packages/pandas/core/frame.py:5239: FutureWarning: ChainedAssignmentError: behaviour will change in pandas 3.0!
+You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
+A typical example is when you are setting values in a column of a DataFrame, like:
+
+df["col"][row_indexer] = value
+
+Use `df.loc[row_indexer, "col"] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+  data[k] = com.apply_if_callable(v, data)
+# Run reference/mixed
+
+Events: 26025 (failed requests: 0)
+
+## Table 4
+
+| operating_point   |   TP |   FP |   FN |    TN |   Precision |   Recall |     F1 |    FPR | Recall_CI95      | FPR_CI95         |
+|:------------------|-----:|-----:|-----:|------:|------------:|---------:|-------:|-------:|:-----------------|:-----------------|
+| Medium+           | 1025 |  292 |    0 | 24708 |      0.7783 |   1.0000 | 0.8753 | 0.0117 | [0.9964, 1.0000] | [0.0104, 0.0131] |
+| Low+              | 1025 | 5438 |    0 | 19562 |      0.1586 |   1.0000 | 0.2738 | 0.2175 | [0.9964, 1.0000] | [0.2124, 0.2227] |
+
+## Table 4, distinct requests (each distinct method+endpoint+payload+headers once)
+
+| operating_point   |   distinct_attacks |   distinct_benign |   TP |   FP |   FN |    TN |   Recall |    FPR | Recall_CI95      | FPR_CI95         |
+|:------------------|-------------------:|------------------:|-----:|-----:|-----:|------:|---------:|-------:|:-----------------|:-----------------|
+| Medium+           |                197 |             25000 |  197 |  292 |    0 | 24708 |   1.0000 | 0.0117 | [0.9814, 1.0000] | [0.0104, 0.0131] |
+| Low+              |                197 |             25000 |  197 | 5438 |    0 | 19562 |   1.0000 | 0.2175 | [0.9814, 1.0000] | [0.2124, 0.2227] |
+
+## Table 5
+
+| class   |   normal |   low |   medium |   high |   critical |   total |
+|:--------|---------:|------:|---------:|-------:|-----------:|--------:|
+| attack  |        0 |     0 |      110 |    905 |         10 |    1025 |
+| benign  |    19562 |  5146 |       81 |    207 |          4 |   25000 |
+
+## Risk levels by attack group
+
+| attack_group        |   normal |   low |   medium |   high |   critical |   total |
+|:--------------------|---------:|------:|---------:|-------:|-----------:|--------:|
+| api_key_exposure    |        0 |     0 |        0 |     30 |          0 |      30 |
+| auth_bruteforce     |        0 |     0 |        0 |     80 |          0 |      80 |
+| business_logic      |        0 |     0 |        0 |     30 |          0 |      30 |
+| cmd_injection       |        0 |     0 |        0 |     50 |          0 |      50 |
+| credential_stuffing |        0 |     0 |        0 |     50 |          0 |      50 |
+| data_exposure       |        0 |     0 |        5 |     45 |          0 |      50 |
+| dos                 |        0 |     0 |       15 |     75 |          0 |      90 |
+| idor                |        0 |     0 |       20 |     20 |          0 |      40 |
+| ldap_injection      |        0 |     0 |        0 |     40 |          0 |      40 |
+| misconfiguration    |        0 |     0 |       10 |     30 |          0 |      40 |
+| nosql_injection     |        0 |     0 |        0 |    100 |         10 |     110 |
+| sql_injection       |        0 |     0 |        0 |    225 |          0 |     225 |
+| ssrf                |        0 |     0 |       10 |     80 |          0 |      90 |
+| ssrf_sensitive      |        0 |     0 |        0 |     10 |          0 |      10 |
+| websocket           |        0 |     0 |        0 |     20 |          0 |      20 |
+| xss                 |        0 |     0 |       50 |     20 |          0 |      70 |
+
+# Run reference/mixed-no-hysteresis
+
+Events: 26025 (failed requests: 0)
+
+## Table 4
+
+| operating_point   |   TP |   FP |   FN |    TN |   Precision |   Recall |     F1 |    FPR | Recall_CI95      | FPR_CI95         |
+|:------------------|-----:|-----:|-----:|------:|------------:|---------:|-------:|-------:|:-----------------|:-----------------|
+| Medium+           | 1025 |  292 |    0 | 24708 |      0.7783 |   1.0000 | 0.8753 | 0.0117 | [0.9964, 1.0000] | [0.0104, 0.0131] |
+| Low+              | 1025 | 5447 |    0 | 19553 |      0.1584 |   1.0000 | 0.2734 | 0.2179 | [0.9964, 1.0000] | [0.2128, 0.2230] |
+
+## Table 4, distinct requests (each distinct method+endpoint+payload+headers once)
+
+| operating_point   |   distinct_attacks |   distinct_benign |   TP |   FP |   FN |    TN |   Recall |    FPR | Recall_CI95      | FPR_CI95         |
+|:------------------|-------------------:|------------------:|-----:|-----:|-----:|------:|---------:|-------:|:-----------------|:-----------------|
+| Medium+           |                197 |             25000 |  197 |  292 |    0 | 24708 |   1.0000 | 0.0117 | [0.9814, 1.0000] | [0.0104, 0.0131] |
+| Low+              |                197 |             25000 |  197 | 5447 |    0 | 19553 |   1.0000 | 0.2179 | [0.9814, 1.0000] | [0.2128, 0.2230] |
+
+## Table 5
+
+| class   |   normal |   low |   medium |   high |   critical |   total |
+|:--------|---------:|------:|---------:|-------:|-----------:|--------:|
+| attack  |        0 |     0 |      110 |    905 |         10 |    1025 |
+| benign  |    19553 |  5155 |       81 |    207 |          4 |   25000 |
+
+## Risk levels by attack group
+
+| attack_group        |   normal |   low |   medium |   high |   critical |   total |
+|:--------------------|---------:|------:|---------:|-------:|-----------:|--------:|
+| api_key_exposure    |        0 |     0 |        0 |     30 |          0 |      30 |
+| auth_bruteforce     |        0 |     0 |        0 |     80 |          0 |      80 |
+| business_logic      |        0 |     0 |        0 |     30 |          0 |      30 |
+| cmd_injection       |        0 |     0 |        0 |     50 |          0 |      50 |
+| credential_stuffing |        0 |     0 |        0 |     50 |          0 |      50 |
+| data_exposure       |        0 |     0 |        5 |     45 |          0 |      50 |
+| dos                 |        0 |     0 |       15 |     75 |          0 |      90 |
+| idor                |        0 |     0 |       20 |     20 |          0 |      40 |
+| ldap_injection      |        0 |     0 |        0 |     40 |          0 |      40 |
+| misconfiguration    |        0 |     0 |       10 |     30 |          0 |      40 |
+| nosql_injection     |        0 |     0 |        0 |    100 |         10 |     110 |
+| sql_injection       |        0 |     0 |        0 |    225 |          0 |     225 |
+| ssrf                |        0 |     0 |       10 |     80 |          0 |      90 |
+| ssrf_sensitive      |        0 |     0 |        0 |     10 |          0 |      10 |
+| websocket           |        0 |     0 |        0 |     20 |          0 |      20 |
+| xss                 |        0 |     0 |       50 |     20 |          0 |      70 |
+
+set -a; . ./.env; . runs/reference/validation/frozen.env; MODELS_DIR=./models; IMPACT_POLICY_HOST=./policies/impact_policy.json; set +a; \
+	  docker compose run --rm --no-deps -v "$PWD":/w -w /w --entrypoint python fusion \
+	  scripts/evaluation/ablate.py --val reference/validation --mixed reference/mixed
+ Container mlnlp-fusion-run-5fae2fcf8cbe Creating 
+ Container mlnlp-fusion-run-5fae2fcf8cbe Created 
+INFO:fusion:Connected to Redis at redis://redis:6379/0
+INFO:fusion:impact_policy_loaded path="/app/policies/impact_policy.json"
+ml_only (alpha=1.0) {"Medium+": {"TP": 1025, "FP": 292, "FN": 0, "TN": 24708, "Precision": 0.7782839787395596, "Recall": 1.0, "F1": 0.8753202391118701, "FPR": 0.01168}, "Low+": {"TP": 1025, "FP": 5447, "FN": 0, "TN": 19553, "Precision": 0.15837453646477131, "Recall": 1.0, "F1": 0.27344271041750035, "FPR": 0.21788}}
+alpha=0.6 {"Medium+": {"TP": 885, "FP": 330, "FN": 140, "TN": 24670, "Precision": 0.7283950617283951, "Recall": 0.8634146341463415, "F1": 0.7901785714285714, "FPR": 0.0132}, "Low+": {"TP": 1025, "FP": 7138, "FN": 0, "TN": 17862, "Precision": 0.1255665809138797, "Recall": 1.0, "F1": 0.22311710927296474, "FPR": 0.28552}}
+nlp_only (alpha=0.0) {"Medium+": {"TP": 865, "FP": 259, "FN": 160, "TN": 24741, "Precision": 0.7695729537366548, "Recall": 0.8439024390243902, "F1": 0.805025593299209, "FPR": 0.01036}, "Low+": {"TP": 1005, "FP": 23963, "FN": 20, "TN": 1037, "Precision": 0.04025152194809356, "Recall": 0.9804878048780488, "F1": 0.07732851152233293, "FPR": 0.95852}}
+docker run --rm -v "$PWD":/w -w /w --entrypoint python mlnlp-retrain \
+	  scripts/evaluation/header_features.py score --mixed reference/mixed
+{"check_max_abs_diff": 0.0, "cf_quantiles_05_25_50_75": [0.9919, 0.9987, 0.9994, 0.9998]}
+set -a; . ./.env; . runs/reference/validation/frozen.env; MODELS_DIR=./models; IMPACT_POLICY_HOST=./policies/impact_policy.json; set +a; \
+	  docker compose run --rm --no-deps -v "$PWD":/w -w /w --entrypoint python fusion \
+	  scripts/evaluation/header_features.py decide --val reference/validation --mixed reference/mixed
+ Container mlnlp-fusion-run-9e15f9039bbb Creating 
+ Container mlnlp-fusion-run-9e15f9039bbb Created 
+INFO:fusion:Connected to Redis at redis://redis:6379/0
+INFO:fusion:impact_policy_loaded path="/app/policies/impact_policy.json"
+frozen {"Medium+": {"TP": 937, "FP": 292, "FN": 88, "TN": 24708, "Precision": 0.7624084621643613, "Recall": 0.9141463414634147, "F1": 0.8314108251996452, "FPR": 0.01168}, "Low+": {"TP": 1025, "FP": 5447, "FN": 0, "TN": 19553, "Precision": 0.15837453646477131, "Recall": 1.0, "F1": 0.27344271041750035, "FPR": 0.21788}}
+ml_only (alpha=1.0) {"Medium+": {"TP": 937, "FP": 292, "FN": 88, "TN": 24708, "Precision": 0.7624084621643613, "Recall": 0.9141463414634147, "F1": 0.8314108251996452, "FPR": 0.01168}, "Low+": {"TP": 1025, "FP": 5447, "FN": 0, "TN": 19553, "Precision": 0.15837453646477131, "Recall": 1.0, "F1": 0.27344271041750035, "FPR": 0.21788}}
+alpha=0.6 {"Medium+": {"TP": 885, "FP": 330, "FN": 140, "TN": 24670, "Precision": 0.7283950617283951, "Recall": 0.8634146341463415, "F1": 0.7901785714285714, "FPR": 0.0132}, "Low+": {"TP": 1025, "FP": 7138, "FN": 0, "TN": 17862, "Precision": 0.1255665809138797, "Recall": 1.0, "F1": 0.22311710927296474, "FPR": 0.28552}}
+nlp_only (alpha=0.0) {"Medium+": {"TP": 865, "FP": 259, "FN": 160, "TN": 24741, "Precision": 0.7695729537366548, "Recall": 0.8439024390243902, "F1": 0.805025593299209, "FPR": 0.01036}, "Low+": {"TP": 1005, "FP": 23963, "FN": 20, "TN": 1037, "Precision": 0.04025152194809356, "Recall": 0.9804878048780488, "F1": 0.07732851152233293, "FPR": 0.95852}}
+.venv/bin/python scripts/evaluation/make_figures.py --run reference/mixed
+written to <repo>/runs/reference/mixed/tables
+set -a; . ./.env; . runs/reference/validation/frozen.env; MODELS_DIR=./models; IMPACT_POLICY_HOST=./policies/impact_policy.json; HYST_ENABLED=1; set +a; \
+	  docker compose up -d --force-recreate orchestrator ml-inference nlp-inference fusion && sleep 30 && \
+	  .venv/bin/python scripts/evaluation/bench_replay.py --run-id reference/bench-replay
+ Container mlnlp-redis-1 Running 
+ Container mlnlp-alerting-1 Running 
+ Container mlnlp-preprocess-1 Running 
+ Container mlnlp-opensearch-1 Running 
+ Container mlnlp-ml-inference-1 Recreate 
+ Container mlnlp-fusion-1 Recreate 
+ Container mlnlp-nlp-inference-1 Recreate 
+ Container mlnlp-nlp-inference-1 Recreated 
+ Container mlnlp-ml-inference-1 Recreated 
+ Container mlnlp-fusion-1 Recreated 
+ Container mlnlp-orchestrator-1 Recreate 
+ Container mlnlp-orchestrator-1 Recreated 
+ Container mlnlp-nlp-inference-1 Starting 
+ Container mlnlp-redis-1 Waiting 
+ Container mlnlp-ml-inference-1 Starting 
+ Container mlnlp-opensearch-1 Waiting 
+ Container mlnlp-redis-1 Waiting 
+ Container mlnlp-nlp-inference-1 Started 
+ Container mlnlp-ml-inference-1 Started 
+ Container mlnlp-redis-1 Healthy 
+ Container mlnlp-redis-1 Healthy 
+ Container mlnlp-fusion-1 Starting 
+ Container mlnlp-opensearch-1 Healthy 
+ Container mlnlp-fusion-1 Started 
+ Container mlnlp-nlp-inference-1 Waiting 
+ Container mlnlp-fusion-1 Waiting 
+ Container mlnlp-alerting-1 Waiting 
+ Container mlnlp-preprocess-1 Waiting 
+ Container mlnlp-ml-inference-1 Waiting 
+ Container mlnlp-preprocess-1 Healthy 
+ Container mlnlp-alerting-1 Healthy 
+ Container mlnlp-ml-inference-1 Healthy 
+ Container mlnlp-fusion-1 Healthy 
+ Container mlnlp-nlp-inference-1 Healthy 
+ Container mlnlp-orchestrator-1 Starting 
+ Container mlnlp-orchestrator-1 Started 
+Target Orchestrator URL: http://localhost:8000/process
+
+Processed 1025 events in 0.004s (~0.0 ms/event, 267594.9 events/sec)
+
+[1;32mDone.[0m
+{"n": 26025}
+replay-detailed {"status": "ok", "events_total": 26025, "events_sent": 26025, "log_file": "/tmp/replay_events.jsonl", "elapsed_seconds": 1629.575, "avg_ms_per_event": 62.6, "concurrency": 1, "detailed": true, "client_wall_s": 1629.982, "throughput_eps": 16.0}
+replay-simple-20 {"status": "ok", "events_total": 26025, "events_sent": 26025, "log_file": "/tmp/replay_events.jsonl", "elapsed_seconds": 524.398, "avg_ms_per_event": 20.1, "concurrency": 20, "detailed": false, "client_wall_s": 524.568, "throughput_eps": 49.6}
+make all exit 0
+end 2026-11-11T17:42:22Z

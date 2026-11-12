@@ -1,0 +1,29 @@
+{
+  "run_id": "reference/bench-replay",
+  "started_utc": "2026-11-11T17:06:15Z",
+  "git_head": "d9240fa742d0ac1dbc446b6810e189709e74916f",
+  "worktree_diff_sha256": "caef09a08afd02b1ad6d4810d956b950aa882110910619b11271c1d75abd1b7c",
+  "n_events": 26025,
+  "input_sha256": "7782ef179b0abed0da5433ae37fbaae648147b76f08b2375f75fa478c2ab67e6",
+  "env": {
+    "ML_THRESHOLD": "0.996542",
+    "NLP_THRESHOLD": "0.343929",
+    "FUSION_LEVELS": "0.997392,1.0,1.0,1.0",
+    "FUSION_NORMAL_THR": "0.886486",
+    "HYST_ENABLED": "1",
+    "MODELS_DIR": "./models",
+    "ML_AGGREGATE": "max",
+    "FUSION_MODE": "weighted",
+    "FUSION_ALPHA": "1.0",
+    "FUSION_BETA": "0.0",
+    "IMPACT_POLICY_HOST": "./policies/impact_policy.json",
+    "COMPOSE_PROJECT_NAME": null
+  },
+  "docker": {
+    "OperatingSystem": "Docker Desktop",
+    "Architecture": "aarch64",
+    "NCPU": 11,
+    "MemTotal": 12526239744,
+    "ServerVersion": "29.9.2"
+  }
+}

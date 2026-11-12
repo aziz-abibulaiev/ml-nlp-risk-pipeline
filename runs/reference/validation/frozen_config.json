@@ -1,0 +1,74 @@
+{
+  "selected_on": "reference/validation",
+  "n_val_benign": 10000,
+  "n_val_attacks": 10000,
+  "FUSION_NORMAL_THR": 0.886486,
+  "FUSION_LEVELS": [
+    0.997392,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "medium_boundary_feasible": true,
+  "ML_THRESHOLD": 0.9965416603544918,
+  "NLP_THRESHOLD": 0.3439290044189051,
+  "nlp_thresholds_val": {
+    "tfidf_lr": 0.3439290044189051,
+    "char_sgd": 0.24252005711841054
+  },
+  "fusion_mode": "weighted",
+  "alpha": 1.0,
+  "beta": 0.0,
+  "alpha_roc_auc_val": {
+    "0.0": 0.67913334,
+    "0.1": 0.84388525,
+    "0.2": 0.85151029,
+    "0.3": 0.88605772,
+    "0.4": 0.90847082,
+    "0.5": 0.92367183,
+    "0.6": 0.93550338,
+    "0.7": 0.944304,
+    "0.8": 0.95370436,
+    "0.9": 0.96385502,
+    "1.0": 0.974917575
+  },
+  "ML_AGGREGATE": "max",
+  "models_dir": "models",
+  "impact_matrix": [
+    [
+      "low",
+      "low",
+      "low"
+    ],
+    [
+      "medium",
+      "high",
+      "high"
+    ],
+    [
+      "high",
+      "high",
+      "critical"
+    ],
+    [
+      "high",
+      "critical",
+      "critical"
+    ]
+  ],
+  "topic_escalation": "disabled",
+  "validation_metrics_at_frozen_values": {
+    "medium_plus": {
+      "fpr_val_benign": 0.01,
+      "recall_val_attacks": 0.5902
+    },
+    "low_plus": {
+      "fpr_val_benign": 0.1727,
+      "recall_val_attacks": 0.9908
+    }
+  },
+  "criteria": {
+    "medium_plus_fpr_max": 0.01,
+    "low_plus_recall_min": 0.99
+  }
+}

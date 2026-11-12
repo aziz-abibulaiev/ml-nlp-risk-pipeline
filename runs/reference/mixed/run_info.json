@@ -1,0 +1,29 @@
+{
+  "set": "mixed",
+  "run_id": "reference/mixed",
+  "started_utc": "2026-11-11T16:07:13Z",
+  "git_head": "d9240fa742d0ac1dbc446b6810e189709e74916f",
+  "worktree_diff_sha256": "caef09a08afd02b1ad6d4810d956b950aa882110910619b11271c1d75abd1b7c",
+  "n_events": 26025,
+  "counts": {
+    "benign:wsal_labeled": 25000,
+    "attack:smoke": 1025
+  },
+  "concurrency": 1,
+  "env": {
+    "ML_THRESHOLD": "0.996542",
+    "NLP_THRESHOLD": "0.343929",
+    "FUSION_LEVELS": "0.997392,1.0,1.0,1.0",
+    "FUSION_NORMAL_THR": "0.886486",
+    "HYST_ENABLED": "1",
+    "MODELS_DIR": "./models",
+    "ML_AGGREGATE": "max",
+    "FUSION_MODE": "weighted",
+    "FUSION_ALPHA": "1.0",
+    "FUSION_BETA": "0.0",
+    "IMPACT_POLICY_HOST": "./policies/impact_policy.json",
+    "COMPOSE_PROJECT_NAME": null
+  },
+  "finished_utc": "2026-11-11T16:36:13Z",
+  "wall_seconds": 1740.1
+}

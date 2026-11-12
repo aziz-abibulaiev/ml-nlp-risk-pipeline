@@ -1,0 +1,17 @@
+attack_group,normal,low,medium,high,critical,total
+api_key_exposure,0,0,0,30,0,30
+auth_bruteforce,0,0,0,80,0,80
+business_logic,0,0,0,30,0,30
+cmd_injection,0,0,0,50,0,50
+credential_stuffing,0,0,0,50,0,50
+data_exposure,0,0,5,45,0,50
+dos,0,0,15,75,0,90
+idor,0,0,20,20,0,40
+ldap_injection,0,0,0,40,0,40
+misconfiguration,0,0,10,30,0,40
+nosql_injection,0,0,0,100,10,110
+sql_injection,0,0,0,225,0,225
+ssrf,0,0,10,80,0,90
+ssrf_sensitive,0,0,0,10,0,10
+websocket,0,0,0,20,0,20
+xss,0,0,50,20,0,70

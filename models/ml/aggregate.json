@@ -1,0 +1,22 @@
+{
+  "kinds": {},
+  "candidates": {
+    "max": {
+      "roc_auc": 0.9754006832436809,
+      "pr_auc": 0.94839303473184
+    },
+    "mean": {
+      "roc_auc": 0.957355705717142,
+      "pr_auc": 0.8918877947773336
+    },
+    "median": {
+      "roc_auc": 0.9704775207535807,
+      "pr_auc": 0.9317684831805175
+    }
+  },
+  "selected": "max",
+  "criterion": "max ROC-AUC on full ML-val",
+  "ML_THRESHOLD": 0.9965416603544918,
+  "fpr_val_benign_at_thr": 0.0100255439337658,
+  "recall_val_attacks_at_thr": 0.6365
+}

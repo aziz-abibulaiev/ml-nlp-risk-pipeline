@@ -51,3 +51,15 @@ logs/
 # Kaggle
 /.kaggle/
 .kagglehub/
+# evaluation runs
+.env
+/models/**/*.npy
+# fresh runs, only the reference outputs are tracked
+/runs/*
+!/runs/reference/
+!/runs/reference/**/logs/
+!/runs/reference/**/*.log
+# per-event outputs are release assets
+/runs/reference/**/events.jsonl
+/runs/reference/**/replay_events.jsonl
+/dist/

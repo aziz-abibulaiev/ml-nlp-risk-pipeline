@@ -35,6 +35,9 @@ TOPIC_STRONG = float(os.getenv("FUSION_TOPIC_STRONG", "0.8"))
 # Topics that escalate risk
 TOPIC_ESCALATION = os.getenv("FUSION_TOPIC_ESCALATION", "list").lower()
 
+# Normal/Low boundary: a fused score below it is "normal". 0.0 disables it.
+NORMAL_THR = float(os.getenv("FUSION_NORMAL_THR", "0.0"))
+
 # Hysteresis
 HYST_ENABLED    = os.getenv("HYST_ENABLED", "1").lower() not in ("0", "false", "no")
 HYST_MARGIN     = float(os.getenv("HYST_MARGIN", "0.07"))       # downgrade
@@ -217,6 +220,8 @@ def risk_level_from_score_only(s: float) -> str:
     return "normal"
 
 def risk_level_from_matrix(s: float, ctx: dict, topics: list[dict]) -> str:
+    if float(s) < NORMAL_THR:
+        return "normal"
     ci = _conf_bin(s)
     ii = _impact_bin(_impact_score(ctx, topics))
     mx = _IMPACT.get("matrix") or []
@@ -382,10 +387,8 @@ def _cleanup_state(now: float):
 
 def _hkey(ctx: Dict[str, Any], default: str) -> str:
     if not isinstance(ctx, dict): return default
-    return (str(ctx.get(HYST_KEY_FIELD))
-            or str(ctx.get("session") or "")
-            or f"{ctx.get('endpoint','')}|{ctx.get('method','')}"
-            or default)
+    v = ctx.get(HYST_KEY_FIELD)
+    return str(v) if v not in (None, "") else default
 
 def _apply_hysteresis(prev_level: str, proposed_level: str, final_score: float) -> Tuple[str, Optional[str], bool]:
     if not HYST_ENABLED:
@@ -584,7 +587,7 @@ async def fuse(
                 if t.get("topic") in (CRITICAL_TOPICS | HIGH_TOPICS)),
                 default=0.0
             )
-            override = "topic_escalation" if top_hit >= topic_thr else None
+            override = "topic_escalation" if (top_hit >= topic_thr and TOPIC_ESCALATION != "disabled") else None
 
             min_level, override_reason, override_topic = (None, None, None)
             if topics:
@@ -600,7 +603,7 @@ async def fuse(
 
             # Hysteresis
             hkey = _hkey(inp.context, hash_id)
-            prev = _state_get(hkey)
+            prev = _state_get(hkey) if HYST_ENABLED else None
             hyst_reason = None
             if prev:
                 adjusted, reason, held = _apply_hysteresis(prev.get("level", "normal"), risk_level, final)
@@ -609,7 +612,8 @@ async def fuse(
                 risk_level, hyst_reason = adjusted, reason
 
             now = time.time()
-            _state_set(hkey, {"level": risk_level, "ts": now, "score": final})
+            if HYST_ENABLED:
+                _state_set(hkey, {"level": risk_level, "ts": now, "score": final})
             # Cleanup state periodically
             if int(now) % 17 == 0:
                 _cleanup_state(now)
